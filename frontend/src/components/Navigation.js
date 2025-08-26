@@ -9,7 +9,7 @@ const Navigation = () => {
             <Leaf className="h-8 w-8 text-green-500" />
             <span className="text-xl font-bold text-gray-900">WasteSpot</span>
           </div>
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="md:flex items-center space-x-8">
             <a href="#about" className="text-gray-600 hover:text-green-500 transition-colors">
               About
             </a>
@@ -30,4 +30,4 @@ const Navigation = () => {
   )
 }
 
-export default Navigation
+export default Navigation;
