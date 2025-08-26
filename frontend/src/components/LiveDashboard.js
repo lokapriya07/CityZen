@@ -1,139 +1,96 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Activity, MapPin, Clock, CheckCircle } from "lucide-react"
+import { Activity } from "lucide-react"
 
 const LiveDashboard = () => {
   const [reports, setReports] = useState([
-    { id: 1, location: "Park Avenue", status: "In Progress", time: "2 hours ago", priority: "High" },
-    { id: 2, location: "Main Street", status: "Completed", time: "4 hours ago", priority: "Medium" },
-    { id: 3, location: "Oak Road", status: "Assigned", time: "6 hours ago", priority: "Low" },
-    { id: 4, location: "Pine Street", status: "Reported", time: "8 hours ago", priority: "High" },
+    { id: 1, location: "Overflowing bin - Park Street", status: "In Progress", time: "Reported 5 min ago", color: "bg-orange-400" },
+    { id: 2, location: "Illegal dumping - Main Ave", status: "Assigned", time: "Reported 12 min ago", color: "bg-green-600" },
+    { id: 3, location: "Litter cleanup - City Center", status: "Resolved", time: "Completed 1 hour ago", color: "bg-green-500" },
   ])
 
   const [stats, setStats] = useState({
-    active: 12,
-    completed: 45,
-    pending: 8,
+    filed: 24,
+    resolved: 18,
+    collected: 156,
   })
 
   useEffect(() => {
     const interval = setInterval(() => {
       setStats((prev) => ({
-        active: prev.active + Math.floor(Math.random() * 3) - 1,
-        completed: prev.completed + Math.floor(Math.random() * 2),
-        pending: prev.pending + Math.floor(Math.random() * 3) - 1,
+        ...prev,
+        filed: prev.filed + Math.floor(Math.random() * 3),
+        resolved: prev.resolved + Math.floor(Math.random() * 2),
+        collected: prev.collected + Math.floor(Math.random() * 10),
       }))
-    }, 5000)
-
+    }, 10000)
     return () => clearInterval(interval)
   }, [])
 
-  const getStatusColor = (status) => {
+  const getStatusClass = (status) => {
     switch (status) {
-      case "Completed":
-        return "text-green-600 bg-green-100"
-      case "In Progress":
-        return "text-blue-600 bg-blue-100"
+      case "Resolved":
+        return "border border-green-600 text-green-600 bg-green-50"
       case "Assigned":
-        return "text-yellow-600 bg-yellow-100"
+        return "bg-green-700 text-white"
+      case "In Progress":
+        return "bg-yellow-400 text-black"
       default:
-        return "text-gray-600 bg-gray-100"
-    }
-  }
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case "High":
-        return "text-red-600"
-      case "Medium":
-        return "text-yellow-600"
-      default:
-        return "text-green-600"
+        return "text-gray-600"
     }
   }
 
   return (
-    <section id="dashboard" className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Activity className="h-6 w-6 text-green-500" />
-            <span className="text-sm font-medium text-green-500 uppercase tracking-wide">Live Dashboard</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Real-Time Waste Tracking</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Monitor cleanup progress across your community in real-time
-          </p>
+    <section className="py-16 bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Live Dashboard</h2>
+          <p className="text-gray-600">Track waste complaints in real-time, just like order tracking</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 mb-12">
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Reports</p>
-                <p className="text-3xl font-bold text-blue-600">{stats.active}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Activity className="h-6 w-6 text-blue-600" />
-              </div>
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Recent Reports */}
+          <div className="bg-green-50 p-6 rounded-xl shadow-sm border border-green-100">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="h-5 w-5 text-green-700" />
+              <h3 className="text-lg font-semibold text-gray-900">Recent Reports</h3>
             </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Completed Today</p>
-                <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending Assignment</p>
-                <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Recent Reports</h3>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">Live Updates</span>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {reports.map((report) => (
-              <div key={report.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <MapPin className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="font-medium text-gray-900">{report.location}</p>
-                    <p className="text-sm text-gray-600">{report.time}</p>
+            <div className="space-y-5">
+              {reports.map((report) => (
+                <div key={report.id} className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <span className={`h-2.5 w-2.5 rounded-full ${report.color}`} />
+                    <div>
+                      <p className="font-medium text-gray-800">{report.location}</p>
+                      <p className="text-sm text-gray-500">{report.time}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className={`text-xs font-medium ${getPriorityColor(report.priority)}`}>
-                    {report.priority} Priority
-                  </span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
+                  <span className={`px-3 py-1 rounded-md text-xs font-medium ${getStatusClass(report.status)}`}>
                     {report.status}
                   </span>
                 </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Today's Impact */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Today's Impact</h3>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-700">{stats.filed}</p>
+                <p className="text-sm text-gray-600">Reports Filed</p>
               </div>
-            ))}
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-700">{stats.resolved}</p>
+                <p className="text-sm text-gray-600">Issues Resolved</p>
+              </div>
+            </div>
+            <div className="bg-green-50 p-6 rounded-lg text-center border border-green-100">
+              <p className="text-3xl font-bold text-green-700">{stats.collected} kg</p>
+              <p className="text-sm text-gray-700 mt-1">Waste Collected Today</p>
+            </div>
           </div>
         </div>
       </div>

@@ -1,0 +1,104 @@
+/* footer.css */
+
+footer {
+    background-color: #f4faf4;
+    /* light greenish background */
+    color: #333;
+    padding: 3rem 1rem;
+    font-family: Arial, sans-serif;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+}
+
+.footer-brand h2 {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #1a4d1a;
+    /* dark green */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer-brand p {
+    color: #444;
+    margin-top: 0.5rem;
+    line-height: 1.5;
+    font-size: 0.9rem;
+}
+
+.footer-links h3,
+.footer-contact h3,
+.footer-social h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #1a4d1a;
+}
+
+.footer-links ul,
+.footer-contact ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-links a {
+    display: block;
+    color: #444;
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: #2f7a2f;
+    /* hover green */
+}
+
+.footer-contact div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    color: #444;
+    font-size: 0.9rem;
+}
+
+.footer-contact svg {
+    margin-right: 0.5rem;
+    color: #2f7a2f;
+}
+
+.footer-social {
+    display: flex;
+    flex-direction: column;
+}
+
+.footer-social-icons {
+    display: flex;
+    gap: 1rem;
+}
+
+.footer-social-icons svg {
+    color: #444;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.footer-social-icons svg:hover {
+    color: #2f7a2f;
+}
+
+.footer-bottom {
+    border-top: 1px solid #ddd;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #666;
+}
