@@ -1,25 +1,42 @@
-# main.py
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
-from PIL import Image
+from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
-import io
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure Gemini API
-genai.configure(api_key="AIzaSyBKKrzis8p7lRPIeIRHPGeHPSBQM0sAV6U")
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY not found in .env file")
 
+genai.configure(api_key=api_key)
+
+# Create FastAPI app
 app = FastAPI()
+
+# Enable CORS (important for React frontend)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # For production, replace "*" with ["http://localhost:3000"] or your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/upload-image")
 async def upload_image(file: UploadFile = File(...)):
-    # Check file type
+    # Validate file type
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Invalid file type")
 
-    # Read the uploaded image
+    # Read uploaded image
     image_bytes = await file.read()
 
-    # Send to Gemini
+    # Use Gemini model for classification
     model = genai.GenerativeModel("gemini-1.5-flash")
     response = model.generate_content([
         {"mime_type": file.content_type, "data": image_bytes},
