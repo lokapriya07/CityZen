@@ -1,4 +1,6 @@
 import { Leaf } from "lucide-react"
+import { Link } from "react-router-dom"; 
+
 
 const Navigation = () => {
   return (
@@ -7,7 +9,7 @@ const Navigation = () => {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-2">
             <Leaf className="h-8 w-8 text-green-500" />
-            <span className="text-xl font-bold text-gray-900">WasteSpot</span>
+            <span className="text-xl font-bold text-gray-900"> CityZen</span>
           </div>
           <div className="md:flex items-center space-x-8">
             <a href="#about" className="text-gray-600 hover:text-green-500 transition-colors">
@@ -23,7 +25,10 @@ const Navigation = () => {
               Contact
             </a>
           </div>
-          <button className="btn btn-primary">Report Waste</button>
+          <Link to="/report-issue" className="btn btn-primary">
+            Report Waste
+          </Link>
+
         </div>
       </div>
     </nav>
