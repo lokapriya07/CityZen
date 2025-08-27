@@ -354,3 +354,38 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+/* Add this to your UploadImage.css file */
+
+.gps-group {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Adds space between checkbox and label */
+}
+
+.gps-group input[type="checkbox"] {
+  width: auto; /* Overrides default input width */
+  margin: 0;
+}
+
+.gps-group label {
+  margin: 0;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.gps-status {
+  margin-top: 8px !important;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* Style for success message */
+.gps-status:first-letter {
+  font-size: 1.1em;
+}
+
+/* Style for error message */
+.gps-status:first-letter {
+  font-size: 1.1em;
+}

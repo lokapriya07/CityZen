@@ -1,29 +1,29 @@
-import Navigation from "./components/Navigation"
-import HeroSection from "./components/HeroSection"
-import AboutSection from "./components/AboutSection"
-import HowItWorksSection from "./components/HowItWorksSection"
-import LiveDashboard from "./components/LiveDashboard"
-import ServicesSection from "./components/ServicesSection"
-import CommunityImpact from "./components/CommunityImpact"
-import TestimonialsSection from "./components/TestimonialsSection"
-import CallToAction from "./components/CallToAction"
-import Footer from "./components/Footer"
+
+
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navigation from "./components/Navigation";
+import Footer from "./components/Footer";
+import HomePage from "./components/Homepage";
+import UploadImage from './components/UploadImage'; 
 
 function App() {
   return (
-    <div className="min-h-screen bg-white">
-      <Navigation />
-      <HeroSection />
-      <AboutSection />
-      <HowItWorksSection />
-      <LiveDashboard />
-      <ServicesSection />
-      <CommunityImpact />
-      <TestimonialsSection />
-      <CallToAction />
-      <Footer />
-    </div>
+    <Router>
+      <div className="min-h-screen bg-white flex flex-col">
+        <Navigation />
+        <main className="flex-grow">
+          <Routes>
+            {/* Route for the home page */}
+            <Route path="/" element={<HomePage />} />
+            
+            {/* Route for the report issue page */}
+            <Route path="/report-issue" element={<UploadImage />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
   )
 }
 
-export default App
+export default App;

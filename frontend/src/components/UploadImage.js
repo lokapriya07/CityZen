@@ -1,9 +1,8 @@
-// src/App.js
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './UploadImage.css';
 
-// SVG Icons for a professional and unique look
+// SVG Icons (no changes here)
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>;
 const LocationIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.033-2.134H8.033C6.91 2.75 6 3.704 6 4.884v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>;
@@ -15,7 +14,8 @@ const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" vie
 const UploadImage = () => {
   const initialFormData = {
     fullName: '', email: '', phone: '', altPhone: '', address: '', city: '',
-    pincode: '', state: '', gpsLocation: false, wasteType: '', wasteAmount: '',
+    pincode: '', state: '', gpsLocation: false, gpsCoordinates: '',
+    wasteType: '', wasteAmount: '',
     description: '', duration: '', accessibility: '', urgency: '', photos: null,
     previousReports: '', preferredContact: '', additionalComments: '',
     updates: false, anonymous: false,
@@ -27,6 +27,7 @@ const UploadImage = () => {
   const [fileLabel, setFileLabel] = useState('Click to select photos or drag and drop here');
   const [fileLabelStyle, setFileLabelStyle] = useState({});
   const [classificationResult, setClassificationResult] = useState("");
+  const [locationStatus, setLocationStatus] = useState('');
   const formRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -41,6 +42,71 @@ const UploadImage = () => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
+  
+  // MODIFIED: Geolocation handler now fetches the address
+  const handleGpsToggle = (e) => {
+    const isChecked = e.target.checked;
+    setFormData(prev => ({ ...prev, gpsLocation: isChecked }));
+
+    if (isChecked) {
+      if (!navigator.geolocation) {
+        setLocationStatus("Geolocation is not supported by your browser.");
+        setFormData(prev => ({ ...prev, gpsLocation: false }));
+        return;
+      }
+
+      setLocationStatus("Fetching your location...");
+      navigator.geolocation.getCurrentPosition(
+        // Success Callback
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          setLocationStatus("✅ Location captured. Fetching address...");
+
+          try {
+            // Use OpenStreetMap's free Nominatim API for reverse geocoding
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+            const data = await response.json();
+
+            if (data && data.address) {
+              const addr = data.address;
+              // Auto-fill the form fields with the fetched address details
+              setFormData(prev => ({
+                ...prev,
+                address: `${addr.road || ''}, ${addr.suburb || ''}`.replace(/^,|,$/g, '').trim(),
+                city: addr.city || addr.town || addr.village || '',
+                pincode: addr.postcode || '',
+                state: addr.state || '',
+                gpsCoordinates: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+              }));
+              setLocationStatus(`✅ Address automatically filled!`);
+            } else {
+              throw new Error("Address not found.");
+            }
+          } catch (error) {
+            console.error("Reverse geocoding error:", error);
+            setLocationStatus("❌ Could not fetch address. Please enter it manually.");
+            setFormData(prev => ({ ...prev, gpsCoordinates: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`}));
+          }
+        },
+        // Error Callback
+        (error) => {
+          let errorMessage = "Could not get your location. ";
+          switch (error.code) {
+            case error.PERMISSION_DENIED: errorMessage += "You denied the request for Geolocation."; break;
+            case error.POSITION_UNAVAILABLE: errorMessage += "Location information is unavailable."; break;
+            case error.TIMEOUT: errorMessage += "The request to get user location timed out."; break;
+            default: errorMessage += "An unknown error occurred."; break;
+          }
+          setLocationStatus(`❌ Error: ${errorMessage}`);
+          setFormData(prev => ({ ...prev, gpsLocation: false }));
+        }
+      );
+    } else {
+      setFormData(prev => ({ ...prev, gpsCoordinates: '' }));
+      setLocationStatus('');
+    }
+  };
+
 
   const resetFileInput = (message) => {
     if (fileInputRef.current) { fileInputRef.current.value = ""; }
@@ -89,17 +155,15 @@ const UploadImage = () => {
     }
 
     setShowSuccess(true);
-    // No need to scroll, as the message appears at the bottom
-    // window.scrollTo({ top: 0, behavior: 'smooth' });
-
     setTimeout(() => {
       setShowSuccess(false);
       setFormData(initialFormData);
       resetFileInput("");
+      setLocationStatus('');
       if (formRef.current) {
         formRef.current.reset();
       }
-    }, 5000); // Message disappears after 5 seconds
+    }, 5000);
   };
 
   const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi"];
@@ -117,7 +181,7 @@ const UploadImage = () => {
         </div>
 
         <form id="complaintForm" onSubmit={handleSubmit} ref={formRef}>
-          {/* All form sections remain the same */}
+          {/* Personal Information Section */}
           <div className="section" style={{ animationDelay: '0s' }}>
             <h2><span className="section-icon"><UserIcon /></span>Personal Information</h2>
             <div className="form-grid">
@@ -127,40 +191,40 @@ const UploadImage = () => {
               <div className="form-group"><label htmlFor="altPhone">Alternative Phone (Optional)</label><input type="tel" id="altPhone" name="altPhone" onChange={handleChange} value={formData.altPhone} /></div>
             </div>
           </div>
-
+          
+          {/* Location Section */}
           <div className="section" style={{ animationDelay: '0.1s' }}>
             <h2><span className="section-icon"><LocationIcon /></span>Waste Spot Location</h2>
             <div className="form-grid">
+              {/* These fields will now be auto-filled by the Geolocation feature */}
               <div className="form-group full-width"><label htmlFor="address" className="required">Street Address/Landmark</label><input type="text" id="address" name="address" onChange={handleChange} value={formData.address} required /><div className="help-text">Provide the most specific address or nearest landmark</div></div>
               <div className="form-group"><label htmlFor="city" className="required">City</label><input type="text" id="city" name="city" onChange={handleChange} value={formData.city} required /></div>
               <div className="form-group"><label htmlFor="pincode" className="required">PIN Code</label><input type="text" id="pincode" name="pincode" pattern="[0-9]{6}" onChange={handleChange} value={formData.pincode} required /></div>
               <div className="form-group"><label htmlFor="state" className="required">State</label><select id="state" name="state" onChange={handleChange} value={formData.state} required><option value="">Select State</option>{indianStates.map(state => <option key={state} value={state}>{state}</option>)}</select></div>
+              
+              <div className="form-group full-width">
+                <div className="checkbox-group gps-group">
+                  <input type="checkbox" id="gpsLocation" name="gpsLocation" checked={formData.gpsLocation} onChange={handleGpsToggle} />
+                  <label htmlFor="gpsLocation">Automatically fill address!</label>
+                </div>
+                {locationStatus && <div className="help-text gps-status">{locationStatus}</div>}
+              </div>
             </div>
           </div>
           
+          {/* Other sections remain the same */}
           <div className="section" style={{ animationDelay: '0.2s' }}>
             <h2><span className="section-icon"><TrashIcon /></span>Waste Spot Details</h2>
-            <div className="form-grid">
-              <div className="form-group"><label htmlFor="wasteType" className="required">Type of Waste</label><select id="wasteType" name="wasteType" value={formData.wasteType} onChange={handleChange} required><option value="">Select Waste Type</option><option value="household">Household Waste</option><option value="construction">Construction Debris</option><option value="electronic">Electronic Waste</option><option value="medical">Medical Waste</option><option value="plastic">Plastic Waste</option><option value="organic">Organic/Food Waste</option><option value="chemical">Chemical/Hazardous Waste</option><option value="mixed">Mixed Waste</option><option value="other">Other</option></select></div>
-              <div className="form-group"><label htmlFor="wasteAmount">Estimated Amount</label><select id="wasteAmount" name="wasteAmount" value={formData.wasteAmount} onChange={handleChange}><option value="">Select Amount</option><option value="small">Small (Few bags/items)</option><option value="medium">Medium (Cart load)</option><option value="large">Large (Truck load)</option><option value="massive">Massive (Multiple trucks)</option></select></div>
-              <div className="form-group full-width"><label htmlFor="description" className="required">Detailed Description</label><textarea id="description" name="description" value={formData.description} onChange={handleChange} required placeholder="Describe the waste spot..."></textarea></div>
-            </div>
+            <div className="form-grid"><div className="form-group"><label htmlFor="wasteType" className="required">Type of Waste</label><select id="wasteType" name="wasteType" value={formData.wasteType} onChange={handleChange} required><option value="">Select Waste Type</option><option value="household">Household Waste</option><option value="construction">Construction Debris</option><option value="electronic">Electronic Waste</option><option value="medical">Medical Waste</option><option value="plastic">Plastic Waste</option><option value="organic">Organic/Food Waste</option><option value="chemical">Chemical/Hazardous Waste</option><option value="mixed">Mixed Waste</option><option value="other">Other</option></select></div><div className="form-group"><label htmlFor="wasteAmount">Estimated Amount</label><select id="wasteAmount" name="wasteAmount" value={formData.wasteAmount} onChange={handleChange}><option value="">Select Amount</option><option value="small">Small (Few bags/items)</option><option value="medium">Medium (Cart load)</option><option value="large">Large (Truck load)</option><option value="massive">Massive (Multiple trucks)</option></select></div><div className="form-group full-width"><label htmlFor="description" className="required">Detailed Description</label><textarea id="description" name="description" value={formData.description} onChange={handleChange} required placeholder="Describe the waste spot..."></textarea></div></div>
           </div>
-          
           <div className="section" style={{ animationDelay: '0.3s' }}>
             <h2><span className="section-icon"><AlertIcon /></span>Urgency Level</h2>
-            <div className="urgency-levels">
-              <div className="urgency-option"><input type="radio" id="low" name="urgency" value="low" className="urgency-radio" onChange={handleChange} checked={formData.urgency === 'low'} /><label htmlFor="low" className="urgency-label low"><strong>Low</strong><small>Can wait a week</small></label></div>
-              <div className="urgency-option"><input type="radio" id="medium" name="urgency" value="medium" className="urgency-radio" onChange={handleChange} checked={formData.urgency === 'medium'} /><label htmlFor="medium" className="urgency-label medium"><strong>Medium</strong><small>Within few days</small></label></div>
-              <div className="urgency-option"><input type="radio" id="high" name="urgency" value="high" className="urgency-radio" onChange={handleChange} checked={formData.urgency === 'high'} /><label htmlFor="high" className="urgency-label high"><strong>High</strong><small>Immediate attention</small></label></div>
-            </div>
+            <div className="urgency-levels"><div className="urgency-option"><input type="radio" id="low" name="urgency" value="low" className="urgency-radio" onChange={handleChange} checked={formData.urgency === 'low'} /><label htmlFor="low" className="urgency-label low"><strong>Low</strong><small>Can wait a week</small></label></div><div className="urgency-option"><input type="radio" id="medium" name="urgency" value="medium" className="urgency-radio" onChange={handleChange} checked={formData.urgency === 'medium'} /><label htmlFor="medium" className="urgency-label medium"><strong>Medium</strong><small>Within few days</small></label></div><div className="urgency-option"><input type="radio" id="high" name="urgency" value="high" className="urgency-radio" onChange={handleChange} checked={formData.urgency === 'high'} /><label htmlFor="high" className="urgency-label high"><strong>High</strong><small>Immediate attention</small></label></div></div>
           </div>
-
           <div className="section" style={{ animationDelay: '0.4s' }}>
             <h2><span className="section-icon"><CameraIcon /></span>Photo Evidence & Classification</h2>
             <div className="form-group"><label htmlFor="photos">Upload Photo (Must be a valid garbage image)</label><div className="file-upload"><input type="file" id="photos" name="photos" className="file-input" accept="image/*" onChange={handleFileChangeAndValidation} ref={fileInputRef} /><label htmlFor="photos" className="file-label" style={fileLabelStyle}><UploadIcon /><span>{fileLabel}</span></label></div><div className="help-text">The image will be validated before it is accepted.</div>{classificationResult && (<div style={{ marginTop: '15px', padding: '10px', borderRadius: '12px', background: 'var(--background-color)', border: '1px solid var(--border-color)' }}><p style={{ fontWeight: '500', color: 'var(--text-color)', margin: 0, textAlign: 'center' }}>Result: <span style={{ fontWeight: '600', color: 'var(--primary-color)' }}>{classificationResult}</span></p></div>)}</div>
           </div>
-
           <div className="section" style={{ animationDelay: '0.5s' }}>
             <h2><span className="section-icon"><InfoIcon /></span>Additional Information</h2>
             <div className="form-grid"><div className="form-group"><label htmlFor="preferredContact">Preferred Contact Method</label><select id="preferredContact" name="preferredContact" value={formData.preferredContact} onChange={handleChange}><option value="">Select Method</option><option value="phone">Phone Call</option><option value="email">Email</option><option value="sms">SMS</option><option value="any">Any method</option></select></div><div className="form-group"><label htmlFor="previousReports">Have you reported this before?</label><select id="previousReports" name="previousReports" value={formData.previousReports} onChange={handleChange}><option value="">Select</option><option value="no">No, first time</option><option value="yes">Yes, reported before</option></select></div></div>
@@ -174,14 +238,7 @@ const UploadImage = () => {
             <div className="help-text" style={{ marginTop: '15px' }}>
               By submitting this form, you agree to our terms and conditions.
             </div>
-
-            {/* --- SUCCESS MESSAGE MOVED HERE --- */}
-            {showSuccess && (
-              <div className="submission-status">
-                <h3>✅ Complaint Submitted Successfully!</h3>
-                <p>Thank you for your contribution to a cleaner environment.</p>
-              </div>
-            )}
+            {showSuccess && (<div className="submission-status"><h3>✅ Complaint Submitted Successfully!</h3><p>Thank you for your contribution to a cleaner environment.</p></div>)}
           </div>
         </form>
       </div>
