@@ -5,6 +5,9 @@ import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
 import HomePage from "./components/Homepage";
 import UploadImage from './components/UploadImage'; 
+import LoginForm from "./components/LoginForm";
+import signupForm from "./components/SignupForm";
+import SignupForm from './components/SignupForm';
 
 function App() {
   return (
@@ -15,7 +18,8 @@ function App() {
           <Routes>
             {/* Route for the home page */}
             <Route path="/" element={<HomePage />} />
-            
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/signup" element={<SignupForm />} />
             {/* Route for the report issue page */}
             <Route path="/report-issue" element={<UploadImage />} />
           </Routes>
