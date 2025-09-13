@@ -2,19 +2,53 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const bcrypt = require('bcryptjs'); // Needed to compare passwords
-const jwt = require('jsonwebtoken'); // Needed to create a login token
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 // SECRET KEY for JWT - In production, this should be in a secure .env file
 const JWT_SECRET = "YourSuperSecretKey123";
 
-// --- SIGNUP ROUTE (You already have this) ---
+// --- SIGNUP ROUTE (This is the corrected and complete version) ---
+// @route   POST api/auth/signup
+// @desc    Register a new user
 router.post('/signup', async (req, res) => {
-  // ... your existing signup code ...
+  // We are keeping the debugging logs to help find any remaining issues.
+  console.log('--- New Signup Request Received ---');
+  console.log('Request Body:', req.body);
+
+  const { name, email, password, role } = req.body;
+
+  try {
+    console.log(`Step 1: Checking if user with email '${email}' already exists...`);
+let user = await User.findOne({ email });
+
+if (user) {
+  console.log('Result: User found. Sending 400 error.');
+  return res.status(400).json({ msg: 'User with this email already exists' });
+}
+
+console.log('Result: User does not exist. Continuing...');
+console.log('Step 2: Creating new user instance in memory...');
+user = new User({ name, email, password, role });
+console.log('Result: Instance created.');
+
+console.log('Step 3: Attempting to save user to database...');
+// The pre-save hook in your User.js model will hash the password here
+await user.save();
+console.log('Result: User saved to database successfully!');
+
+console.log('--- Sending success response to browser ---');
+res.status(201).json({ msg: 'User registered successfully' });
+
+  } catch (err) {
+  console.error('---!! AN ERROR OCCURRED during signup !!---');
+  console.error(err); // Log the full error
+  res.status(500).send('Server Error');
+}
 });
 
 
-// --- LOGIN ROUTE (Add this new block) ---
+// --- LOGIN ROUTE (This code was already correct) ---
 // @route   POST api/auth/login
 // @desc    Authenticate user & get token
 router.post('/login', async (req, res) => {
@@ -37,7 +71,7 @@ router.post('/login', async (req, res) => {
     const payload = {
       user: {
         id: user.id,
-        name: user.name, // Include user's name in the token payload
+        name: user.name,
         role: user.role,
       },
     };
