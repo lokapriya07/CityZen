@@ -1,154 +1,53 @@
-// "use client"
-
-// import { useState } from "react"
-// import { useRouter } from "next/navigation"
-// import { Button } from "@/components/ui/button"
-// import { Input } from "@/components/ui/input"
-// import { Label } from "@/components/ui/label"
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-// import { Alert, AlertDescription } from "@/components/ui/alert"
-// import { useAuth } from "@/lib/auth"
-// import { Loader2 } from "lucide-react"
-
-// export function LoginForm() {
-//   const [email, setEmail] = useState("")
-//   const [password, setPassword] = useState("")
-//   const [role, setRole] = useState("user")
-//   const [error, setError] = useState("")
-//   const { login, isLoading } = useAuth()
-//   const router = useRouter()
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault()
-//     setError("")
-
-//     if (!email || !password) {
-//       setError("Please fill in all fields")
-//       return
-//     }
-
-//     const success = await login(email, password, role)
-//     if (success) {
-//       // Redirect based on role
-//       switch (role) {
-//         case "admin":
-//           router.push("/admin")
-//           break
-//         case "worker":
-//           router.push("/worker")
-//           break
-//         default:
-//           router.push("/")
-//           break
-//       }
-//     } else {
-//       setError("Invalid credentials. Please try again.")
-//     }
-//   }
-
-//   return (
-//     <Card className="w-full max-w-md mx-auto">
-//       <CardHeader className="text-center">
-//         <CardTitle className="text-2xl">Welcome Back</CardTitle>
-//         <CardDescription>Sign in to your City Brain account</CardDescription>
-//       </CardHeader>
-//       <CardContent>
-//         <form onSubmit={handleSubmit} className="space-y-4">
-//           <div>
-//             <Label htmlFor="email">Email</Label>
-//             <Input
-//               id="email"
-//               type="email"
-//               placeholder="Enter your email"
-//               value={email}
-//               onChange={(e) => setEmail(e.target.value)}
-//               required
-//             />
-//           </div>
-
-//           <div>
-//             <Label htmlFor="password">Password</Label>
-//             <Input
-//               id="password"
-//               type="password"
-//               placeholder="Enter your password"
-//               value={password}
-//               onChange={(e) => setPassword(e.target.value)}
-//               required
-//             />
-//           </div>
-
-//           <div>
-//             <Label htmlFor="role">Account Type</Label>
-//             <Select value={role} onValueChange={(value) => setRole(value)}>
-//               <SelectTrigger>
-//                 <SelectValue placeholder="Select your role" />
-//               </SelectTrigger>
-//               <SelectContent>
-//                 <SelectItem value="user">Citizen</SelectItem>
-//                 <SelectItem value="worker">Waste Worker</SelectItem>
-//                 <SelectItem value="admin">Administrator</SelectItem>
-//               </SelectContent>
-//             </Select>
-//           </div>
-
-//           {error && (
-//             <Alert variant="destructive">
-//               <AlertDescription>{error}</AlertDescription>
-//             </Alert>
-//           )}
-
-//           <Button type="submit" className="w-full" disabled={isLoading}>
-//             {isLoading ? (
-//               <>
-//                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-//                 Signing in...
-//               </>
-//             ) : (
-//               "Sign In"
-//             )}
-//           </Button>
-//         </form>
-//       </CardContent>
-//     </Card>
-//   )
-// }
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // 👈 Import the useAuth hook
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user");
+  // The 'role' state is not needed for login, the backend will determine it
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth(); // 👈 Get the login function from your context
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => { // 👈 Make the function async
     e.preventDefault();
     setError("");
 
     if (!email || !password) {
-      setError("Please fill in all fields");
-      return;
+      return setError("Please fill in all fields");
     }
 
-    // Dummy login (replace with real API later)
-    if (email === "test@test.com" && password === "1234") {
-      switch (role) {
-        case "admin":
-          navigate("/admin");
-          break;
-        case "worker":
-          navigate("/worker");
-          break;
-        default:
-          navigate("/");
-          break;
+    setLoading(true);
+
+    try {
+      // --- API Call to Backend Login Endpoint ---
+      const response = await fetch('http://localhost:8001/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.msg || 'Login failed.');
       }
-    } else {
-      setError("Invalid credentials. Please try again.");
+
+      // --- If login is successful ---
+      // 1. Use the context to update the global state and save user to localStorage
+      login(data.user);
+
+      // 2. Navigate to the home page
+      navigate("/");
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -161,50 +60,19 @@ export default function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label>Email</label>
-            <input
-              className="w-full border rounded p-2"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <input className="w-full border rounded p-2" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
-
           <div>
             <label>Password</label>
-            <input
-              className="w-full border rounded p-2"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <input className="w-full border rounded p-2" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
+          
+          {/* We don't need the role selector for login */}
+          
+          {error && <div className="text-red-500 text-sm">{error}</div>}
 
-          <div>
-            <label>Account Type</label>
-            <select
-              className="w-full border rounded p-2"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="user">Citizen</option>
-              <option value="worker">Waste Worker</option>
-              <option value="admin">Administrator</option>
-            </select>
-          </div>
-
-          {error && (
-            <div className="text-red-500 text-sm">{error}</div>
-          )}
-
-          <button
-            type="submit"
-            className="w-full bg-green-700 text-white py-2 rounded hover:bg-green-800"
-          >
-            Sign In
+          <button type="submit" disabled={loading} className="w-full bg-green-700 text-white py-2 rounded hover:bg-green-800 disabled:bg-gray-400">
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
@@ -218,6 +86,3 @@ export default function LoginForm() {
     </div>
   );
 }
-
-
-
