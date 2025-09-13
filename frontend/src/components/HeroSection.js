@@ -1,6 +1,24 @@
-import { ArrowRight, MapPin } from "lucide-react"
+import { ArrowRight, MapPin } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for redirection
+import { useAuth } from "../context/AuthContext"; // Import the useAuth hook to check login status
 
 const HeroSection = () => {
+  const { user } = useAuth(); // Get the current user from the context
+  const navigate = useNavigate(); // Initialize the navigate function
+
+  // This function will be called when the "Report Waste" button is clicked
+  const handleReportWasteClick = () => {
+    if (user) {
+      // If the user is logged in, navigate to the report issue page
+      navigate("/report-issue");
+    } else {
+      // If the user is not logged in, prompt them to log in first
+      alert("Please log in to report waste.");
+      // Optionally, you can redirect them directly to the login page:
+      // navigate("/login");
+    }
+  };
+
   return (
     <section className="relative bg-gradient-to-br from-green-50 to-white py-20 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -18,7 +36,11 @@ const HeroSection = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="btn btn-primary text-lg px-8 py-3 flex items-center gap-2">
+              {/* Add the onClick handler to this button */}
+              <button 
+                onClick={handleReportWasteClick} 
+                className="btn btn-primary text-lg px-8 py-3 flex items-center gap-2"
+              >
                 <MapPin className="h-5 w-5" />
                 Report Waste Now
                 <ArrowRight className="h-5 w-5" />
@@ -56,7 +78,7 @@ const HeroSection = () => {
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default HeroSection
+export default HeroSection;
