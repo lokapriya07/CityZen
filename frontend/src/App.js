@@ -8,6 +8,7 @@ import UploadImage from './components/UploadImage';
 import LoginForm from "./components/LoginForm";
 import signupForm from "./components/SignupForm";
 import SignupForm from './components/SignupForm';
+import AdminDashboard from "./components/admin/AdminDashboard";
 
 function App() {
   return (
@@ -22,6 +23,8 @@ function App() {
             <Route path="/signup" element={<SignupForm />} />
             {/* Route for the report issue page */}
             <Route path="/report-issue" element={<UploadImage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+
           </Routes>
         </main>
         <Footer />
