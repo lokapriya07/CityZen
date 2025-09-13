@@ -2,50 +2,64 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function SignupForm() {
+  // --- State variables for form inputs and UI feedback ---
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState("user");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false); // For showing a loading state on the button
+  
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError("");
+  // --- Handles form submission ---
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Prevent the browser from reloading the page
+    setError(""); // Clear any previous errors
 
-    if (!email || !password || !name) {
-      setError("Please fill in all fields");
-      return;
+    // --- 1. Frontend Validation ---
+    if (!email || !password || !name || !confirmPassword) {
+      return setError("Please fill in all fields");
     }
-
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
+      return setError("Passwords do not match");
     }
-
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
+      return setError("Password must be at least 6 characters");
     }
 
-    // 👉 Dummy signup logic (replace with API call later)
-    const success = true;
+    setLoading(true); // Disable the button and show a loading message
 
-    if (success) {
-      switch (role) {
-        case "admin":
-          navigate("/admin");
-          break;
-        case "worker":
-          navigate("/worker");
-          break;
-        default:
-          navigate("/");
-          break;
+    // --- 2. API Call to the Backend ---
+    try {
+      const response = await fetch('http://localhost:8001/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, password, role }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // If the server returns an error (e.g., "User already exists"), display it
+        throw new Error(data.msg || 'Registration failed.');
       }
-    } else {
-      setError("Registration failed. Please try again.");
+
+      // --- 3. Handle Success ---
+      // If registration is successful, alert the user and redirect to the login page
+      alert('Registration successful! Please log in.');
+      navigate("/login");
+
+    } catch (err) {
+      // If there was an error during the API call, display it
+      setError(err.message);
+    } finally {
+      // --- 4. Reset Loading State ---
+      // This runs whether the request succeeded or failed
+      setLoading(false);
     }
   };
 
@@ -123,9 +137,10 @@ export default function SignupForm() {
 
           <button
             type="submit"
-            className="w-full bg-green-700 text-white py-2 rounded hover:bg-green-800"
+            disabled={loading} // Button is disabled while loading
+            className="w-full bg-green-700 text-white py-2 rounded hover:bg-green-800 disabled:bg-gray-400"
           >
-            Create Account
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
       </div>
