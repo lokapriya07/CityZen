@@ -65,7 +65,6 @@ function App() {
               <Route path="/worker" element={<WorkerDashboard />} />
             </Routes>
           </main>
-          <Footer />
         </div>
       </AuthProvider>
     </Router>

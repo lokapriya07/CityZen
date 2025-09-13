@@ -8,6 +8,7 @@ import ServicesSection from "./ServicesSection"
 import CommunityImpact from "./CommunityImpact"
 import TestimonialsSection from "./TestimonialsSection"
 import CallToAction from "./CallToAction"
+import Footer from "./Footer"
 
 const HomePage = () => {
   return (
@@ -20,6 +21,7 @@ const HomePage = () => {
       <CommunityImpact />
       <TestimonialsSection />
       <CallToAction />
+      <Footer />
     </>
   )
 }
