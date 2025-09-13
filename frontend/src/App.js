@@ -9,7 +9,7 @@ import LoginForm from "./components/LoginForm";
 import signupForm from "./components/SignupForm";
 import SignupForm from './components/SignupForm';
 import AdminDashboard from "./components/admin/AdminDashboard";
-
+import WorkerDashboard from "./components/worker/WorkerDashboard";
 function App() {
   return (
     <Router>
@@ -24,6 +24,7 @@ function App() {
             {/* Route for the report issue page */}
             <Route path="/report-issue" element={<UploadImage />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/worker" element={<WorkerDashboard />} />
 
           </Routes>
         </main>
