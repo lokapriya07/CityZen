@@ -119,11 +119,11 @@ const UploadImage = () => {
   const handleFileChangeAndValidation = async (event) => {
     const files = event.target.files;
     if (files.length === 0) return;
-    
+
     const fileToValidate = files[0];
     const uploadFormData = new FormData();
     uploadFormData.append("file", fileToValidate);
-    
+
     setClassificationResult("Classifying, please wait...");
 
     try {
@@ -136,9 +136,9 @@ const UploadImage = () => {
         resetFileInput("Invalid image. Please upload a photo of garbage.");
         return;
       }
-      
+
       setClassificationResult(resultMessage);
-      setFormData(prev => ({ ...prev, photos: files }));
+      setFormData(prev => ({ ...prev, photos: Array.from(files) })); // ✅ FIX
       setFileLabel(`📷 ${files.length} photo(s) selected`);
       setFileLabelStyle({ borderColor: 'var(--success-color)', background: '#e8f5e9', color: 'var(--success-color)' });
     } catch (err) {
@@ -147,24 +147,63 @@ const UploadImage = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!formData.photos) {
       alert("Please upload a valid photo of the waste spot before submitting.");
       return;
     }
 
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      setFormData(initialFormData);
-      resetFileInput("");
-      setLocationStatus('');
-      if (formRef.current) {
-        formRef.current.reset();
+    try {
+      const submitFormData = new FormData();
+      submitFormData.append("fullName", formData.fullName);
+      submitFormData.append("email", formData.email);
+      submitFormData.append("phone", formData.phone);
+      submitFormData.append("altPhone", formData.altPhone);
+      submitFormData.append("description", formData.description);
+      submitFormData.append("urgency", formData.urgency);
+      submitFormData.append("wasteType", formData.wasteType);
+      submitFormData.append("wasteAmount", formData.wasteAmount);
+      submitFormData.append("preferredContact", formData.preferredContact);
+      submitFormData.append("previousReports", formData.previousReports);
+      submitFormData.append("address", formData.address);
+      submitFormData.append("city", formData.city);
+      submitFormData.append("pincode", formData.pincode);
+      submitFormData.append("state", formData.state);
+      submitFormData.append("gpsCoordinates", formData.gpsCoordinates);
+
+      // Append all selected photos
+      for (let i = 0; i < formData.photos.length; i++) {
+        submitFormData.append("images", formData.photos[i]);
       }
-    }, 5000);
+
+      const res = await axios.post("http://localhost:8001/api/reports", submitFormData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("token")}`, // if using auth
+        },
+      });
+
+      if (res.data.success) {
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          setFormData(initialFormData);
+          resetFileInput("");
+          setLocationStatus("");
+          if (formRef.current) formRef.current.reset();
+        }, 5000);
+      } else {
+        alert("Something went wrong while submitting your report.");
+      }
+    } catch (err) {
+      console.error("Submit error:", err.response?.data || err.message);
+      alert("Failed to submit complaint. Please try again.");
+    }
   };
+
 
   const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi"];
 

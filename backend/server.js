@@ -5,9 +5,9 @@ const cors = require('cors');
 const app = express();
 const PORT = 8001; // Use a port different from your React app
 
-// Middleware
-app.use(cors()); // Allows your React app to make requests to this server
-app.use(express.json()); // Allows the server to accept JSON data
+app.use(cors()); // allow frontend requests
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // MongoDB Connection
 const MONGO_URI = "mongodb://localhost:27017/cityzenApp"; // Your MongoDB connection string
@@ -18,7 +18,11 @@ mongoose.connect(MONGO_URI)
 
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
-
+app.use('/api/reports',require('./routes/reports'));
+const adminRoutes = require("./routes/admin");
+app.use("/api/admin", adminRoutes);
+const workerRoutes = require("./routes/worker");
+app.use("/api/worker", workerRoutes);
 // Start the server
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);

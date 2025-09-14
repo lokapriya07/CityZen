@@ -4,9 +4,10 @@ const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+require("dotenv").config();
 
 // SECRET KEY for JWT - In production, this should be in a secure .env file
-const JWT_SECRET = "YourSuperSecretKey123";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // --- SIGNUP ROUTE (This is the corrected and complete version) ---
 // @route   POST api/auth/signup
@@ -51,41 +52,29 @@ res.status(201).json({ msg: 'User registered successfully' });
 // --- LOGIN ROUTE (This code was already correct) ---
 // @route   POST api/auth/login
 // @desc    Authenticate user & get token
+// LOGIN ROUTE// LOGIN
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // 1. Check if the user exists
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ msg: 'Invalid credentials' });
-    }
+    if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
 
-    // 2. Compare the submitted password with the hashed password in the database
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Invalid credentials' });
-    }
+    if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
 
-    // 3. If credentials are correct, create a JWT token
-    const payload = {
-      user: {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-      },
-    };
+    const payload = { id: user.id, role: user.role };
 
     jwt.sign(
       payload,
-      JWT_SECRET,
-      { expiresIn: '5h' }, // Token expires in 5 hours
+      process.env.JWT_SECRET || JWT_SECRET,
+      { expiresIn: '5h' },
       (err, token) => {
         if (err) throw err;
-        // 4. Send the token and user info back to the frontend
         res.json({
           token,
           user: {
+            id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
