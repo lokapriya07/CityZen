@@ -1,5 +1,5 @@
 const express = require("express")
-const { body, query, param } = require("express-validator")
+const { body, query, param, validationResult } = require("express-validator") // ✅ added validationResult
 const multer = require("multer")
 const cloudinary = require("cloudinary").v2
 const axios = require("axios")
@@ -11,6 +11,7 @@ const { reportLimiter } = require("../middleware/rateLimiter")
 
 const router = express.Router()
 
+
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -19,20 +20,23 @@ cloudinary.config({
 })
 
 // Configure multer for image uploads
-const storage = multer.memoryStorage()
+const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // Increased to 10MB to match FastAPI service
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true)
-    } else {
-      cb(new Error("Only image files are allowed"), false)
-    }
-  },
-})
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per image
+});
+const uploadToCloudinary = (fileBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "waste_reports" },
+      (error, result) => {
+        if (result) resolve({ url: result.secure_url, publicId: result.public_id });
+        else reject(error);
+      }
+    );
+    stream.end(fileBuffer);
+  });
+};
 
 const validateImageWithAI = async (imageBuffer, mimetype) => {
   try {
@@ -74,173 +78,79 @@ const validateImageWithAI = async (imageBuffer, mimetype) => {
 router.post(
   "/",
   protect,
-  reportLimiter,
-  upload.array("images", 5), // Max 5 images
+  upload.array("images", 5), // allow up to 5 images
   [
-    body("location.address").notEmpty().withMessage("Address is required"),
-    body("location.coordinates.lat").isFloat({ min: -90, max: 90 }).withMessage("Valid latitude is required"),
-    body("location.coordinates.lng").isFloat({ min: -180, max: 180 }).withMessage("Valid longitude is required"),
-    body("wasteType")
-      .isIn([
-        "household",
-        "construction",
-        "electronic",
-        "medical",
-        "industrial",
-        "organic",
-        "plastic",
-        "hazardous",
-        "other",
-      ])
-      .withMessage("Invalid waste type"),
-    body("wasteSize").isIn(["small", "medium", "large", "very-large"]).withMessage("Invalid waste size"),
-    body("urgency").isIn(["low", "medium", "high", "critical"]).withMessage("Invalid urgency level"),
-    body("description").isLength({ min: 10, max: 500 }).withMessage("Description must be 10-500 characters"),
+    body("address").notEmpty().withMessage("Address is required"),
+    body("wasteType").notEmpty().withMessage("Waste type is required"),
+    body("wasteAmount").notEmpty().withMessage("Waste amount is required"),
+    body("urgency").notEmpty().withMessage("Urgency is required"),
+    body("description").isLength({ min: 10 }).withMessage("Description must be at least 10 chars"),
   ],
-  handleValidationErrors,
   async (req, res) => {
     try {
-      const { location, wasteType, wasteSize, urgency, description, aiAnalysis } = req.body
+      // ✅ Debug Logs
+      console.log("📩 Incoming Report Body:", req.body);
+      console.log("📸 Uploaded Files:", req.files?.length || 0);
 
-      const imageUploads = []
-      const aiValidationResults = []
+      // ✅ Validation
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        console.log("❌ Validation Errors:", errors.array());
+        return res.status(400).json({ errors: errors.array() });
+      }
 
+      // ✅ Upload images to Cloudinary
+      let uploadedImages = [];
       if (req.files && req.files.length > 0) {
-        for (const file of req.files) {
-          try {
-            // Validate image with AI first
-            const aiValidation = await validateImageWithAI(file.buffer, file.mimetype)
-            aiValidationResults.push(aiValidation)
-
-            // Only upload if AI validation passes or service is unavailable
-            if (aiValidation.isValid) {
-              const result = await new Promise((resolve, reject) => {
-                cloudinary.uploader
-                  .upload_stream(
-                    {
-                      resource_type: "image",
-                      folder: "waste-reports",
-                      transformation: [{ width: 800, height: 600, crop: "limit", quality: "auto" }],
-                    },
-                    (error, result) => {
-                      if (error) reject(error)
-                      else resolve(result)
-                    },
-                  )
-                  .end(file.buffer)
-              })
-
-              imageUploads.push({
-                url: result.secure_url,
-                publicId: result.public_id,
-                aiValidation: {
-                  isValid: aiValidation.isValid,
-                  message: aiValidation.message,
-                  confidence: aiValidation.confidence,
-                  validatedAt: new Date(),
-                },
-              })
-            } else {
-              // Return error if AI rejects the image
-              return res.status(400).json({
-                success: false,
-                message: `Image validation failed: ${aiValidation.message}`,
-                error: "INVALID_IMAGE",
-              })
-            }
-          } catch (uploadError) {
-            console.error("Image processing error:", uploadError)
-            return res.status(400).json({
-              success: false,
-              message: "Failed to process uploaded image",
-              error: "IMAGE_PROCESSING_ERROR",
-            })
-          }
-        }
+        uploadedImages = await Promise.all(
+          req.files.map(file => uploadToCloudinary(file.buffer))
+        );
       }
 
-      const enhancedAiAnalysis = {
-        ...(aiAnalysis || {}),
-        imageValidation: aiValidationResults,
-        validationTimestamp: new Date(),
-        allImagesValid: aiValidationResults.every((result) => result.isValid),
-      }
+      // ✅ Unique Complaint ID
+      const complaintId = `CMP${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-      // Create report
+      // ✅ Create Report in MongoDB
       const report = await Report.create({
-        reporter: req.user.id,
-        location: {
-          address: location.address,
-          coordinates: {
-            lat: Number.parseFloat(location.coordinates.lat),
-            lng: Number.parseFloat(location.coordinates.lng),
-          },
-          landmark: location.landmark,
-          area: location.area,
-          city: location.city,
-          pincode: location.pincode,
-        },
-        wasteType,
-        wasteSize,
-        urgency,
-        description,
-        images: imageUploads,
-        aiAnalysis: enhancedAiAnalysis,
-        timeline: [
-          {
-            status: "pending",
-            timestamp: new Date(),
-            updatedBy: req.user.id,
-            notes: "Report submitted with AI-validated images",
-          },
-        ],
-      })
+        reporter: req.user._id,
+        complaintId,
+        fullName: req.body.fullName,
+        email: req.body.email,
+        phone: req.body.phone,
+        altPhone: req.body.altPhone,
+        address: req.body.address,
+        city: req.body.city,
+        pincode: req.body.pincode,
+        state: req.body.state,
+        gpsCoordinates: req.body.gpsCoordinates,
+        wasteType: req.body.wasteType,
+        wasteAmount: req.body.wasteAmount,
+        urgency: req.body.urgency,
+        description: req.body.description,
+        preferredContact: req.body.preferredContact,
+        previousReports: req.body.previousReports,
+        images: uploadedImages,
+      });
 
-      // Update user's report count and points
-      await User.findByIdAndUpdate(req.user.id, {
-        $inc: {
-          reportsSubmitted: 1,
-          points: 10, // Award 10 points for submitting a report
-        },
-      })
-
-      // Populate reporter details
-      await report.populate("reporter", "name email phone")
+      console.log("✅ Report Saved:", report._id);
 
       res.status(201).json({
         success: true,
-        message: "Waste report submitted successfully with AI validation",
-        data: {
-          report: {
-            id: report._id,
-            reportId: report.reportId,
-            location: report.location,
-            wasteType: report.wasteType,
-            wasteSize: report.wasteSize,
-            urgency: report.urgency,
-            description: report.description,
-            images: report.images,
-            status: report.status,
-            priority: report.priority,
-            createdAt: report.createdAt,
-            reporter: report.reporter,
-            aiValidation: {
-              validated: true,
-              results: aiValidationResults,
-            },
-          },
-        },
-      })
+        message: "Complaint submitted successfully",
+        data: report,
+      });
     } catch (error) {
-      console.error("Report submission error:", error)
+      console.error("🔥 Report Submission Error:", error);
       res.status(500).json({
         success: false,
-        message: "Failed to submit report",
-        error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
-      })
+        message: "Server Error",
+        error: error.message,
+      });
     }
-  },
-)
+  }
+);
+
+
 
 // @desc    Validate image with AI (for frontend preview)
 // @route   POST /api/reports/validate-image
@@ -369,6 +279,32 @@ router.get(
     }
   },
 )
+router.get("/:id/track", protect, async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id)
+      .populate("assignedWorker", "fullName email phone")
+      .populate("reporter", "fullName email"); // 👈 fix here
+
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    // Authorization check
+    // if (report.reporter.toString() !== req.user.id) {
+    //   return res.status(403).json({ message: "Not authorized to view this report" });
+    // }
+
+    res.json({
+      complaintId: report.complaintId,
+      status: report.status,
+      timeline: report.timeline,
+      assignedWorker: report.assignedWorker,
+    });
+  } catch (error) {
+    console.error("Track report error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 // @desc    Get user's own reports
 // @route   GET /api/reports/my-reports
@@ -694,3 +630,6 @@ router.put(
 )
 
 module.exports = router
+
+
+

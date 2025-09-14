@@ -5,7 +5,7 @@ const taskSchema = new mongoose.Schema(
     taskId: {
       type: String,
       unique: true,
-      required: true,
+      // required: true,
     },
     report: {
       type: mongoose.Schema.Types.ObjectId,

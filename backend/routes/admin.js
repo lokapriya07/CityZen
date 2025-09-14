@@ -13,6 +13,22 @@ const router = express.Router()
 router.use(protect)
 router.use(authorize("admin"))
 
+/**
+ * Helper function: update Analytics doc for today
+ */
+async function updateAnalytics(updates) {
+  const today = new Date(new Date().setHours(0, 0, 0, 0))
+
+  await Analytics.findOneAndUpdate(
+    { date: today },
+    {
+      $setOnInsert: { date: today },
+      $inc: updates, // increment fields dynamically
+    },
+    { upsert: true, new: true }
+  )
+}
+
 // @desc    Get dashboard overview statistics
 // @route   GET /api/admin/dashboard
 // @access  Private (Admin)
@@ -23,7 +39,6 @@ router.get("/dashboard", async (req, res) => {
     const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()))
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
 
-    // Get basic counts
     const [
       totalReports,
       pendingReports,
@@ -48,34 +63,20 @@ router.get("/dashboard", async (req, res) => {
       Report.countDocuments({ createdAt: { $gte: startOfMonth } }),
     ])
 
-    // Get recent reports
     const recentReports = await Report.find()
       .populate("reporter", "name email")
       .populate("assignedWorker", "name workerDetails.employeeId")
       .sort({ createdAt: -1 })
       .limit(10)
 
-    // Get priority distribution
     const priorityStats = await Report.aggregate([
-      {
-        $group: {
-          _id: "$urgency",
-          count: { $sum: 1 },
-        },
-      },
+      { $group: { _id: "$urgency", count: { $sum: 1 } } },
     ])
 
-    // Get waste type distribution
     const wasteTypeStats = await Report.aggregate([
-      {
-        $group: {
-          _id: "$wasteType",
-          count: { $sum: 1 },
-        },
-      },
+      { $group: { _id: "$wasteType", count: { $sum: 1 } } },
     ])
 
-    // Get area-wise statistics
     const areaStats = await Report.aggregate([
       {
         $group: {
@@ -93,7 +94,10 @@ router.get("/dashboard", async (req, res) => {
           totalReports: 1,
           completedReports: 1,
           completionRate: {
-            $multiply: [{ $divide: ["$completedReports", "$totalReports"] }, 100],
+            $multiply: [
+              { $divide: ["$completedReports", "$totalReports"] },
+              100,
+            ],
           },
           avgRating: { $round: ["$avgRating", 1] },
         },
@@ -102,11 +106,12 @@ router.get("/dashboard", async (req, res) => {
       { $limit: 10 },
     ])
 
-    // Calculate completion rate
-    const completionRate = totalReports > 0 ? Math.round((completedReports / totalReports) * 100) : 0
+    const completionRate =
+      totalReports > 0
+        ? Math.round((completedReports / totalReports) * 100)
+        : 0
 
-    // Calculate average response time (mock calculation)
-    const avgResponseTime = 2.5 // hours
+    const avgResponseTime = 2.5 // mock
 
     res.json({
       success: true,
@@ -140,14 +145,15 @@ router.get("/dashboard", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch dashboard data",
-      error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     })
   }
 })
 
 // @desc    Get all workers with their performance
-// @route   GET /api/admin/workers
-// @access  Private (Admin)
 router.get("/workers", async (req, res) => {
   try {
     const { page = 1, limit = 20, status, department } = req.query
@@ -156,23 +162,32 @@ router.get("/workers", async (req, res) => {
     if (status) filter.isActive = status === "active"
     if (department) filter["workerDetails.department"] = department
 
-    const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit)
+    const skip = (parseInt(page) - 1) * parseInt(limit)
 
     const workers = await User.find(filter)
       .select("-password")
       .sort({ "workerDetails.rating": -1 })
       .skip(skip)
-      .limit(Number.parseInt(limit))
+      .limit(parseInt(limit))
 
-    // Get task statistics for each worker
     const workersWithStats = await Promise.all(
       workers.map(async (worker) => {
         const [assignedTasks, completedTasks, avgRating] = await Promise.all([
           Task.countDocuments({ assignedWorker: worker._id }),
-          Task.countDocuments({ assignedWorker: worker._id, status: "completed" }),
+          Task.countDocuments({
+            assignedWorker: worker._id,
+            status: "completed",
+          }),
           Task.aggregate([
-            { $match: { assignedWorker: worker._id, qualityRating: { $exists: true } } },
-            { $group: { _id: null, avgRating: { $avg: "$qualityRating" } } },
+            {
+              $match: {
+                assignedWorker: worker._id,
+                qualityRating: { $exists: true },
+              },
+            },
+            {
+              $group: { _id: null, avgRating: { $avg: "$qualityRating" } },
+            },
           ]),
         ])
 
@@ -181,11 +196,17 @@ router.get("/workers", async (req, res) => {
           stats: {
             assignedTasks,
             completedTasks,
-            completionRate: assignedTasks > 0 ? Math.round((completedTasks / assignedTasks) * 100) : 0,
-            avgRating: avgRating.length > 0 ? Math.round(avgRating[0].avgRating * 10) / 10 : 0,
+            completionRate:
+              assignedTasks > 0
+                ? Math.round((completedTasks / assignedTasks) * 100)
+                : 0,
+            avgRating:
+              avgRating.length > 0
+                ? Math.round(avgRating[0].avgRating * 10) / 10
+                : 0,
           },
         }
-      }),
+      })
     )
 
     const total = await User.countDocuments(filter)
@@ -195,10 +216,10 @@ router.get("/workers", async (req, res) => {
       data: {
         workers: workersWithStats,
         pagination: {
-          current: Number.parseInt(page),
-          pages: Math.ceil(total / Number.parseInt(limit)),
+          current: parseInt(page),
+          pages: Math.ceil(total / parseInt(limit)),
           total,
-          limit: Number.parseInt(limit),
+          limit: parseInt(limit),
         },
       },
     })
@@ -207,178 +228,176 @@ router.get("/workers", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch workers",
-      error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     })
   }
 })
 
-// @desc    Assign report to worker
+// @desc    Assign report to worker (updates Analytics)
 // @route   PUT /api/admin/reports/:reportId/assign
-// @access  Private (Admin)
 router.put(
   "/reports/:reportId/assign",
   [
     param("reportId").isMongoId().withMessage("Invalid report ID"),
     body("workerId").isMongoId().withMessage("Invalid worker ID"),
-    body("estimatedCompletionTime").optional().isISO8601().withMessage("Invalid completion time"),
-    body("notes").optional().isLength({ max: 500 }).withMessage("Notes cannot exceed 500 characters"),
   ],
   handleValidationErrors,
   async (req, res) => {
     try {
-      const { workerId, estimatedCompletionTime, notes } = req.body
+      const { workerId } = req.body
 
-      // Check if report exists
       const report = await Report.findById(req.params.reportId)
       if (!report) {
-        return res.status(404).json({
-          success: false,
-          message: "Report not found",
-        })
+        return res
+          .status(404)
+          .json({ success: false, message: "Report not found" })
       }
 
-      // Check if worker exists and is active
-      const worker = await User.findOne({ _id: workerId, role: "worker", isActive: true })
+      const worker = await User.findOne({
+        _id: workerId,
+        role: "worker",
+        isActive: true,
+      })
       if (!worker) {
-        return res.status(404).json({
-          success: false,
-          message: "Worker not found or inactive",
-        })
+        return res
+          .status(404)
+          .json({ success: false, message: "Worker not found or inactive" })
       }
 
-      // Update report
       report.assignedWorker = workerId
-      report.assignedAt = new Date()
       report.status = "assigned"
-      if (estimatedCompletionTime) {
-        report.estimatedCompletionTime = new Date(estimatedCompletionTime)
-      }
+      report.assignedAt = new Date()
 
-      // Add timeline entry
       report.timeline.push({
         status: "assigned",
         timestamp: new Date(),
         updatedBy: req.user.id,
-        notes: notes || `Assigned to ${worker.name}`,
+        notes: `Assigned to ${worker.name}`,
       })
 
       await report.save()
 
-      // Create task for worker
-      const task = await Task.create({
+      const task = new Task({
         report: report._id,
         assignedWorker: workerId,
         assignedBy: req.user.id,
-        title: `${report.wasteType} waste cleanup - ${report.location.area}`,
-        description: report.description,
-        priority: report.urgency,
-        location: report.location,
-        estimatedDuration: 60, // Default 1 hour
+        title: report.title || "Report Task",
+        description: report.description || "",
+        priority: report.urgency || "medium",
+        status: "assigned",
+        location: report.location || {},
       })
 
-      await report.populate("assignedWorker", "name email workerDetails.employeeId")
+      await task.save()
+
+      // 🔥 Update analytics
+      await updateAnalytics({ reportsReceived: 1, tasksAssigned: 1 })
 
       res.json({
         success: true,
-        message: "Report assigned successfully",
-        data: {
-          report,
-          task: {
-            id: task._id,
-            taskId: task.taskId,
-          },
-        },
+        message: "Report assigned and task created successfully",
+        data: { report, task },
       })
     } catch (error) {
       console.error("Assign report error:", error)
       res.status(500).json({
         success: false,
         message: "Failed to assign report",
-        error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
+        error: error.message,
       })
     }
-  },
+  }
 )
+
 
 // @desc    Get analytics data
 // @route   GET /api/admin/analytics
 // @access  Private (Admin)
+// GET /analytics
 router.get("/analytics", async (req, res) => {
   try {
     const { period = "week", startDate, endDate } = req.query
 
-    let dateFilter = {}
-    const now = new Date()
-
-    if (startDate && endDate) {
-      dateFilter = {
-        createdAt: {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate),
-        },
+    // Helper: build a range filter on a given field (createdAt / completedAt)
+    function buildDateRangeFilter({ period = "week", startDate, endDate, field = "createdAt" }) {
+      if (startDate && endDate) {
+        return {
+          [field]: {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+          },
+        }
       }
-    } else {
+
+      const now = new Date()
+      let start
+
       switch (period) {
         case "today":
-          dateFilter = {
-            createdAt: {
-              $gte: new Date(now.setHours(0, 0, 0, 0)),
-            },
-          }
+          start = new Date()
+          start.setHours(0, 0, 0, 0)
           break
         case "week":
-          dateFilter = {
-            createdAt: {
-              $gte: new Date(now.setDate(now.getDate() - 7)),
-            },
-          }
+          start = new Date()
+          start.setDate(start.getDate() - 7)
+          start.setHours(0, 0, 0, 0)
           break
         case "month":
-          dateFilter = {
-            createdAt: {
-              $gte: new Date(now.setMonth(now.getMonth() - 1)),
-            },
-          }
+          start = new Date()
+          start.setMonth(start.getMonth() - 1)
+          start.setHours(0, 0, 0, 0)
           break
         case "year":
-          dateFilter = {
-            createdAt: {
-              $gte: new Date(now.setFullYear(now.getFullYear() - 1)),
-            },
-          }
+          start = new Date()
+          start.setFullYear(start.getFullYear() - 1)
+          start.setHours(0, 0, 0, 0)
           break
+        default:
+          start = new Date()
+          start.setDate(start.getDate() - 7)
+          start.setHours(0, 0, 0, 0)
       }
+
+      return { [field]: { $gte: start } }
     }
 
-    // Get time series data for reports
+    // Build filters:
+    const reportCreatedFilter = buildDateRangeFilter({ period, startDate, endDate, field: "createdAt" })
+    const reportCompletedFilter = buildDateRangeFilter({ period, startDate, endDate, field: "completedAt" })
+    const taskCompletedFilter = buildDateRangeFilter({ period, startDate, endDate, field: "completedAt" })
+
+    // TIME SERIES: counts of reports grouped by creation time (change to completedAt if you prefer)
+    const timeSeriesFormat = period === "today" ? "%H:00" : period === "week" ? "%Y-%m-%d" : "%Y-%m"
     const timeSeriesData = await Report.aggregate([
-      { $match: dateFilter },
+      { $match: reportCreatedFilter },
       {
         $group: {
           _id: {
             $dateToString: {
-              format: period === "today" ? "%H:00" : period === "week" ? "%Y-%m-%d" : "%Y-%m",
+              format: timeSeriesFormat,
               date: "$createdAt",
             },
           },
           reports: { $sum: 1 },
-          completed: {
-            $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] },
-          },
+          completed: { $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] } },
         },
       },
       { $sort: { _id: 1 } },
     ])
 
-    // Get performance metrics
-    const performanceMetrics = await Report.aggregate([
-      { $match: { ...dateFilter, status: "completed" } },
+    // PERFORMANCE METRICS: consider only reports completed within the selected range (match on completedAt)
+    const performanceMetricsAgg = await Report.aggregate([
+      { $match: { ...reportCompletedFilter, status: "completed" } },
       {
         $group: {
           _id: null,
           avgCompletionTime: {
+            // difference between completedAt and createdAt in hours
             $avg: {
-              $divide: [{ $subtract: ["$completedAt", "$createdAt"] }, 1000 * 60 * 60], // hours
+              $divide: [{ $subtract: ["$completedAt", "$createdAt"] }, 1000 * 60 * 60],
             },
           },
           avgRating: { $avg: "$feedback.rating" },
@@ -387,9 +406,15 @@ router.get("/analytics", async (req, res) => {
       },
     ])
 
-    // Get worker performance
+    const performanceMetrics = performanceMetricsAgg[0] || {
+      avgCompletionTime: 0,
+      avgRating: 0,
+      totalCompleted: 0,
+    }
+
+    // WORKER PERFORMANCE: tasks completed within selected range (match on completedAt)
     const workerPerformance = await Task.aggregate([
-      { $match: { ...dateFilter, status: "completed" } },
+      { $match: { ...taskCompletedFilter, status: "completed" } },
       {
         $group: {
           _id: "$assignedWorker",
@@ -420,7 +445,7 @@ router.get("/analytics", async (req, res) => {
       { $limit: 10 },
     ])
 
-    // Get environmental impact (mock data)
+    // ENVIRONMENTAL IMPACT (mock)
     const environmentalImpact = {
       wasteCollected: 1250, // kg
       recycledWaste: 875, // kg
@@ -431,11 +456,7 @@ router.get("/analytics", async (req, res) => {
       success: true,
       data: {
         timeSeriesData,
-        performanceMetrics: performanceMetrics[0] || {
-          avgCompletionTime: 0,
-          avgRating: 0,
-          totalCompleted: 0,
-        },
+        performanceMetrics,
         workerPerformance,
         environmentalImpact,
       },

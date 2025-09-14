@@ -117,6 +117,17 @@ body {
   width: 28px;
   height: 28px;
 }
+.section {
+  margin-bottom: 20px;
+  /* reduce spacing between sections */
+  padding: 10px 0;
+  /* keep it tight */
+}
+
+.section:last-child {
+  margin-bottom: 0;
+  /* remove extra gap after last section */
+}
 
 .form-grid {
   display: grid;
