@@ -4,3 +4,4 @@ pillow
 google-generativeai
 python-multipart
 python-dotenv
+socket.io
