@@ -45,6 +45,7 @@ import LoginForm from "./components/LoginForm";
 import SignupForm from './components/SignupForm';
 import AdminDashboard from "./components/admin/AdminDashboard";
 import WorkerDashboard from "./components/worker/WorkerDashboard";
+import CitizenDashboard from "./components/citizen/CitizenDashboard";
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
@@ -61,6 +62,7 @@ function App() {
               <Route path="/login" element={<LoginForm />} />
               <Route path="/signup" element={<SignupForm />} />
               <Route path="/report-issue" element={<UploadImage />} />
+               <Route path="/citizen" element={<CitizenDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/worker" element={<WorkerDashboard />} />
             </Routes>

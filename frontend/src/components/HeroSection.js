@@ -45,7 +45,7 @@ const HeroSection = () => {
                 Report Waste Now
                 <ArrowRight className="h-5 w-5" />
               </button>
-              <button className="btn btn-secondary text-lg px-8 py-3">View Dashboard</button>
+              {/* <button className="btn btn-secondary text-lg px-8 py-3">View Dashboard</button> */}
             </div>
 
             <div className="flex items-center gap-8 pt-4">
