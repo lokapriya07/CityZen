@@ -249,14 +249,19 @@
 // export default TaskQueue;
 
 
-import React, { useState } from "react";
-import { MapPin, Clock, CheckCircle, Navigation, Play } from "lucide-react";
+"use client";
 
-function TaskQueue() {
+import React, { useState } from "react";
+import { MapPin, Clock, CheckCircle, Navigation, Play, Phone } from "lucide-react";
+import { LoadScript, GoogleMap, Marker } from "@react-google-maps/api";
+
+export default function TaskQueue() {
   const [tasks, setTasks] = useState([
     {
       id: "WM-001",
       location: "Downtown Plaza, Main St & 5th Ave",
+      lat: 40.7128,
+      lng: -74.006,
       wasteType: "General Waste",
       priority: "critical",
       estimatedTime: "2h",
@@ -264,10 +269,13 @@ function TaskQueue() {
       status: "pending",
       assignedTime: "09:30 AM",
       dueTime: "12:00 PM",
+      supportNumber: "+1234567890",
     },
     {
       id: "WM-002",
       location: "Park Avenue Residential",
+      lat: 40.7145,
+      lng: -74.005,
       wasteType: "Recyclable",
       priority: "medium",
       estimatedTime: "1h",
@@ -275,10 +283,13 @@ function TaskQueue() {
       status: "accepted",
       assignedTime: "10:15 AM",
       dueTime: "02:00 PM",
+      supportNumber: "+1234567890",
     },
     {
       id: "WM-003",
       location: "Industrial District Block C",
+      lat: 40.7132,
+      lng: -74.008,
       wasteType: "Hazardous",
       priority: "high",
       estimatedTime: "3h",
@@ -286,74 +297,73 @@ function TaskQueue() {
       status: "on-way",
       assignedTime: "08:00 AM",
       dueTime: "01:00 PM",
+      supportNumber: "+1234567890",
     },
   ]);
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case "critical":
-        return "bg-red-600 text-white";
-      case "high":
-        return "bg-orange-500 text-white";
-      case "medium":
-        return "bg-yellow-500 text-white";
-      default:
-        return "bg-blue-600 text-white";
+      case "critical": return "bg-red-600 text-white";
+      case "high": return "bg-orange-500 text-white";
+      case "medium": return "bg-yellow-500 text-white";
+      default: return "bg-blue-600 text-white";
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "completed":
-        return "text-green-600";
-      case "in-progress":
-        return "text-blue-600";
-      case "on-way":
-        return "text-orange-500";
-      case "accepted":
-        return "text-purple-600";
-      default:
-        return "text-gray-500";
+      case "completed": return "text-green-600";
+      case "in-progress": return "text-blue-600";
+      case "on-way": return "text-orange-500";
+      case "accepted": return "text-purple-600";
+      default: return "text-gray-500";
     }
   };
 
   const updateTaskStatus = (taskId, newStatus) => {
-    setTasks(tasks.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task)));
+    setTasks(tasks.map(task => task.id === taskId ? { ...task, status: newStatus } : task));
   };
 
   const getNextAction = (status) => {
     switch (status) {
-      case "pending":
-        return { label: "Accept Task", icon: CheckCircle, nextStatus: "accepted" };
-      case "accepted":
-        return { label: "On the Way", icon: Navigation, nextStatus: "on-way" };
-      case "on-way":
-        return { label: "Start Work", icon: Play, nextStatus: "in-progress" };
-      case "in-progress":
-        return { label: "Mark Complete", icon: CheckCircle, nextStatus: "completed" };
-      default:
-        return null;
+      case "pending": return { label: "Accept Task", icon: CheckCircle, nextStatus: "accepted" };
+      case "accepted": return { label: "On the Way", icon: Navigation, nextStatus: "on-way" };
+      case "on-way": return { label: "Start Work", icon: Play, nextStatus: "in-progress" };
+      case "in-progress": return { label: "Mark Complete", icon: CheckCircle, nextStatus: "completed" };
+      default: return null;
     }
   };
 
   const handleActionClick = (task) => {
     const nextAction = getNextAction(task.status);
-    if (nextAction) {
-      // Directly update the status
-      updateTaskStatus(task.id, nextAction.nextStatus);
+    if (nextAction) updateTaskStatus(task.id, nextAction.nextStatus);
+  };
+
+  const handleNavigate = (task) => {
+    if (!task.lat || !task.lng) {
+      alert("Location not available!");
+      return;
     }
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${task.lat},${task.lng}`;
+    window.open(url, "_blank");
+  };
+
+  const handleCallSupport = (number) => {
+    if (!number) {
+      alert("Support number not available!");
+      return;
+    }
+    window.open(`tel:${number}`);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Task Cards */}
-      <div className="grid gap-4">
-        {tasks.map((task) => {
+    <LoadScript googleMapsApiKey="YOUR_GOOGLE_MAPS_API_KEY">
+      <div className="space-y-6">
+        {tasks.map(task => {
           const nextAction = getNextAction(task.status);
-
           return (
             <div key={task.id} className="bg-white shadow rounded overflow-hidden">
-              {/* Card Header */}
+              {/* Header */}
               <div className="flex justify-between items-start p-4 border-b">
                 <div>
                   <div className="text-lg font-semibold">{task.id}</div>
@@ -372,58 +382,67 @@ function TaskQueue() {
                 </div>
               </div>
 
-              {/* Card Content */}
-              <div className="p-4 space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 mt-0.5 text-gray-500" />
-                      <div>
-                        <div className="font-medium text-sm">{task.location}</div>
-                        <div className="text-xs text-gray-500">Waste Type: {task.wasteType}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">Estimated: {task.estimatedTime}</span>
-                    </div>
-                    <p className="text-sm text-gray-500">{task.description}</p>
-                  </div>
-
-                  <div className="bg-gray-100 rounded-lg h-32 flex items-center justify-center">
-                    <div className="text-center text-gray-500">
-                      <MapPin className="h-8 w-8 mx-auto mb-2" />
-                      <div className="text-xs">Location Map</div>
+              {/* Content with map on right */}
+              <div className="p-4 space-y-4 grid md:grid-cols-2 gap-4 items-center">
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 mt-0.5 text-gray-500" />
+                    <div>
+                      <div className="font-medium text-sm">{task.location}</div>
+                      <div className="text-xs text-gray-500">Waste Type: {task.wasteType}</div>
                     </div>
                   </div>
-                </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">Estimated: {task.estimatedTime}</span>
+                  </div>
+                  <p className="text-sm text-gray-500">{task.description}</p>
 
-                {/* Actions */}
-                <div className="flex justify-between pt-2 border-t">
-                  <div className="flex gap-2">
-                    <button className="flex items-center gap-1 px-3 py-1 border rounded text-sm hover:bg-gray-100">
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => handleNavigate(task)}
+                      className="flex items-center gap-1 px-3 py-1 border rounded text-sm hover:bg-gray-100"
+                    >
                       <MapPin className="h-4 w-4" /> Navigate
                     </button>
-                    <button className="px-3 py-1 border rounded text-sm hover:bg-gray-100">Call Support</button>
-                  </div>
-
-                  {nextAction && (
                     <button
-                      onClick={() => handleActionClick(task)}
-                      className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      onClick={() => handleCallSupport(task.supportNumber)}
+                      className="flex items-center gap-1 px-3 py-1 border rounded text-sm hover:bg-gray-100"
                     >
-                      <nextAction.icon className="h-4 w-4" />
-                      {nextAction.label}
+                      <Phone className="h-4 w-4" /> Call Support
                     </button>
-                  )}
+                  </div>
+                </div>
+
+                {/* Map on right side */}
+                <div className="bg-gray-100 rounded-lg h-32 w-full">
+                  <GoogleMap
+                    mapContainerStyle={{ width: "100%", height: "100%" }}
+                    center={{ lat: task.lat, lng: task.lng }}
+                    zoom={16}
+                  >
+                    <Marker position={{ lat: task.lat, lng: task.lng }} />
+                  </GoogleMap>
                 </div>
               </div>
+
+              {/* Task Action Button */}
+              {nextAction && (
+                <div className="p-4 border-t flex justify-end">
+                  <button
+                    onClick={() => handleActionClick(task)}
+                    className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    <nextAction.icon className="h-4 w-4" />
+                    {nextAction.label}
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
-    </div>
+    </LoadScript>
   );
 }
-
-export default TaskQueue;
