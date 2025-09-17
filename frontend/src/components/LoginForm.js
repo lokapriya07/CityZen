@@ -46,7 +46,7 @@ export default function LoginForm() {
       } else if (data.user.role === "worker") {
         navigate("/worker");
       } else {
-        navigate("/"); // citizen → homepage
+        navigate("/citizen"); // citizen → homepage
       }
 
     } catch (err) {
