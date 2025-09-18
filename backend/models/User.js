@@ -20,6 +20,34 @@ const UserSchema = new mongoose.Schema({
     enum: ['user', 'worker', 'admin'],
     default: 'user',
   },
+  // isActive applies to ALL roles (admin/worker status)
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+
+  // 💡 workerDetails is now treated as an OPTIONAL sub-document
+  // It should only be populated/updated when role === 'worker'
+
+  workerDetails: {
+    type: { // Define the structure of the workerDetails object
+      employeeId: { type: String, unique: true, sparse: true },
+      phone: { type: String },
+      specialization: {
+        type: [String],
+        default: ['general waste'],
+        enum: ['general waste', 'recycling', 'hazardous waste', 'illegal dumping', 'organic waste', 'composting'],
+      },
+      currentLocation: { // Used for distance calculation
+        latitude: { type: Number, default: 0 },
+        longitude: { type: Number, default: 0 },
+        // 🚨 ADD THIS FIELD 🚨
+        timestamp: { type: Date, default: Date.now },
+      },
+      points: { type: Number, default: 0 },
+      avatar: { type: String },
+    },
+  },
 });
 
 // This special function runs *before* a user is saved
