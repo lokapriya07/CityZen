@@ -1,139 +1,270 @@
-import React from "react";
+"use client";
 
-export function CommunityEngagement() {
-  const leaderboard = [
-    { rank: 1, name: "Green Warriors Community", reports: 45, points: 2250, badge: "Eco Champion" },
-    { rank: 2, name: "Downtown Clean Team", reports: 38, points: 1900, badge: "Clean Crusader" },
-    { rank: 3, name: "Park Avenue Residents", reports: 32, points: 1600, badge: "Neighborhood Hero" },
-    { rank: 4, name: "Student Environmental Club", reports: 28, points: 1400, badge: "Future Leader" },
-    { rank: 5, name: "Business District Alliance", reports: 25, points: 1250, badge: "Corporate Partner" },
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../citizen/ui/card";
+import { Button } from "../citizen/ui/button";
+import { Badge } from "../citizen/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "../citizen/ui/avatar";
+import { Progress } from "../citizen/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../citizen/ui/tabs";
+
+export default function CommunityEngagement() {
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
+
+  // Mock community data
+  const topReporters = [
+    {
+      id: "1",
+      name: "Sarah Wilson",
+      avatar: "/placeholder.svg",
+      reports: 45,
+      points: 1250,
+      badges: ["eco-warrior", "community-champion", "clean-streets"],
+      area: "Block A",
+      joinedDate: "2023-08-15",
+    },
+    {
+      id: "2",
+      name: "Mike Johnson",
+      avatar: "/placeholder.svg",
+      reports: 38,
+      points: 980,
+      badges: ["vigilant-citizen", "green-guardian"],
+      area: "Sector 15",
+      joinedDate: "2023-09-22",
+    },
+    {
+      id: "3",
+      name: "Priya Patel",
+      avatar: "/placeholder.svg",
+      reports: 32,
+      points: 850,
+      badges: ["neighborhood-hero", "clean-streets"],
+      area: "Block C",
+      joinedDate: "2023-07-10",
+    },
+    {
+      id: "4",
+      name: "John Doe",
+      avatar: "/placeholder.svg",
+      reports: 28,
+      points: 720,
+      badges: ["eco-warrior"],
+      area: "Park Area",
+      joinedDate: "2023-10-05",
+    },
+    {
+      id: "5",
+      name: "Lisa Chen",
+      avatar: "/placeholder.svg",
+      reports: 24,
+      points: 650,
+      badges: ["green-guardian", "vigilant-citizen"],
+      area: "Block B",
+      joinedDate: "2023-11-12",
+    },
+  ];
+
+  const topAreas = [
+    { area: "Block A", reports: 156, residents: 1200, engagement: 85 },
+    { area: "Sector 15", reports: 134, residents: 980, engagement: 78 },
+    { area: "Block C", reports: 98, residents: 850, engagement: 72 },
+    { area: "Park Area", reports: 87, residents: 650, engagement: 68 },
+    { area: "Block B", reports: 76, residents: 720, engagement: 65 },
   ];
 
   const campaigns = [
-    { title: "Clean City Challenge", description: "Monthly community cleanup initiative", participants: 234, status: "active", progress: 78, reward: "500 points" },
-    { title: "Recycling Heroes", description: "Promote recycling awareness", participants: 156, status: "active", progress: 45, reward: "300 points" },
-    { title: "Zero Waste Week", description: "Reduce waste generation", participants: 89, status: "upcoming", progress: 0, reward: "750 points" },
+    {
+      id: "1",
+      title: "Clean Streets Initiative",
+      description: "Report overflowing bins and illegal dumping to keep our streets clean",
+      startDate: "2024-01-01",
+      endDate: "2024-03-31",
+      status: "active",
+      participants: 234,
+      reportsGenerated: 567,
+      target: 800,
+      rewards: ["Clean Streets Badge", "50 Bonus Points", "City Recognition"],
+    },
+    {
+      id: "2",
+      title: "Green Neighborhood Challenge",
+      description: "Promote recycling and proper waste segregation in residential areas",
+      startDate: "2024-02-15",
+      endDate: "2024-04-15",
+      status: "active",
+      participants: 189,
+      reportsGenerated: 234,
+      target: 400,
+      rewards: ["Green Guardian Badge", "75 Bonus Points", "Eco-Friendly Kit"],
+    },
+    {
+      id: "3",
+      title: "Zero Waste Week",
+      description: "Special campaign to minimize waste generation and maximize recycling",
+      startDate: "2024-01-15",
+      endDate: "2024-01-22",
+      status: "completed",
+      participants: 456,
+      reportsGenerated: 123,
+      target: 100,
+      rewards: ["Zero Waste Warrior Badge", "100 Bonus Points"],
+    },
   ];
 
-  const topReporters = [
-    { name: "Alice Johnson", reports: 23, streak: 7, level: "Gold" },
-    { name: "Bob Smith", reports: 19, streak: 5, level: "Silver" },
-    { name: "Carol Davis", reports: 16, streak: 12, level: "Gold" },
-    { name: "David Wilson", reports: 14, streak: 3, level: "Bronze" },
+  const badges = [
+    { id: "eco-warrior", name: "Eco Warrior", description: "Reported 25+ environmental issues", icon: "🌱", rarity: "common", holders: 45 },
+    { id: "community-champion", name: "Community Champion", description: "Top reporter in your area for 3 months", icon: "🏆", rarity: "rare", holders: 12 },
+    { id: "clean-streets", name: "Clean Streets", description: "Participated in Clean Streets Initiative", icon: "🧹", rarity: "common", holders: 234 },
+    { id: "vigilant-citizen", name: "Vigilant Citizen", description: "Consistently reports issues within 24 hours", icon: "👁️", rarity: "uncommon", holders: 28 },
+    { id: "green-guardian", name: "Green Guardian", description: "Focuses on recycling and waste segregation", icon: "♻️", rarity: "uncommon", holders: 67 },
+    { id: "neighborhood-hero", name: "Neighborhood Hero", description: "Helped resolve 50+ community issues", icon: "🦸", rarity: "epic", holders: 8 },
   ];
 
-  const getLevelColor = (level) => {
-    switch (level) {
-      case "Gold": return "text-yellow-600";
-      case "Silver": return "text-gray-500";
-      case "Bronze": return "text-orange-600";
-      default: return "text-gray-400";
-    }
-  };
+  const getBadgeInfo = (badgeId) => badges.find((b) => b.id === badgeId);
 
-  const getBadgeColor = (badge) => {
-    switch (badge) {
-      case "Eco Champion": return "bg-green-500 text-white";
-      case "Clean Crusader": return "bg-blue-500 text-white";
-      case "Neighborhood Hero": return "bg-purple-500 text-white";
-      default: return "bg-gray-300 text-black";
+  const getRarityColor = (rarity) => {
+    switch (rarity) {
+      case "common": return "bg-gray-100 text-gray-700 border-gray-300";
+      case "uncommon": return "bg-green-100 text-green-700 border-green-300";
+      case "rare": return "bg-blue-100 text-blue-700 border-blue-300";
+      case "epic": return "bg-purple-100 text-purple-700 border-purple-300";
+      default: return "bg-gray-100 text-gray-700 border-gray-300";
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Community Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="border rounded p-4 shadow bg-white">
-          <div className="text-sm font-semibold mb-2">Active Users</div>
-          <div className="text-2xl font-bold">1,247</div>
-          <div className="text-sm text-green-600 mt-1">+18% this month</div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Community Engagement</h2>
+          <p className="text-muted-foreground">Recognize active citizens and promote community participation</p>
         </div>
-        <div className="border rounded p-4 shadow bg-white">
-          <div className="text-sm font-semibold mb-2">Total Reports</div>
-          <div className="text-2xl font-bold">3,456</div>
-          <div className="text-sm text-green-600 mt-1">+25% this month</div>
-        </div>
-        <div className="border rounded p-4 shadow bg-white">
-          <div className="text-sm font-semibold mb-2">Points Awarded</div>
-          <div className="text-2xl font-bold">45,678</div>
-          <div className="text-sm text-gray-500 mt-1">total points</div>
-        </div>
-        <div className="border rounded p-4 shadow bg-white">
-          <div className="text-sm font-semibold mb-2">Active Campaigns</div>
-          <div className="text-2xl font-bold">3</div>
-          <div className="text-sm text-gray-500 mt-1">running now</div>
+        <div className="flex items-center space-x-3">
+          <Button variant="outline" size="sm">➕ New Campaign</Button>
+          <Button size="sm">🎁 Send Rewards</Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Leaderboard */}
-        <div className="border rounded shadow p-4 bg-white">
-          <div className="text-lg font-bold mb-2">Community Leaderboard</div>
-          <div className="text-sm text-gray-500 mb-4">Top performing communities this month</div>
-          <div className="space-y-3">
-            {leaderboard.map((entry) => (
-              <div key={entry.rank} className="flex items-center gap-4 p-3 rounded-lg border">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${getBadgeColor(entry.badge)}`}>{entry.rank}</div>
-                <div className="flex-1">
-                  <div className="font-semibold text-sm">{entry.name}</div>
-                  <div className="text-xs text-gray-500">{entry.reports} reports • {entry.points} points</div>
-                </div>
-                <div className={`px-2 py-1 text-xs rounded ${getBadgeColor(entry.badge)}`}>{entry.badge}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <Tabs defaultValue="leaderboard" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="leaderboard">Leaderboards</TabsTrigger>
+          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="badges">Badges & Rewards</TabsTrigger>
+          <TabsTrigger value="insights">Community Insights</TabsTrigger>
+        </TabsList>
 
-        {/* Active Campaigns */}
-        <div className="border rounded shadow p-4 bg-white">
-          <div className="text-lg font-bold mb-2">Active Campaigns</div>
-          <div className="text-sm text-gray-500 mb-4">Community engagement initiatives</div>
-          <div className="space-y-3">
-            {campaigns.map((c, i) => (
-              <div key={i} className="border rounded p-3">
-                <div className="flex justify-between mb-2">
-                  <div>
-                    <div className="font-semibold text-sm">{c.title}</div>
-                    <div className="text-xs text-gray-500">{c.description}</div>
+        {/* Leaderboards */}
+        <TabsContent value="leaderboard" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Reporters */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Top Reporters</span>
+                  <Badge variant="secondary">This Month</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {topReporters.map((r, i) => (
+                  <div key={r.id} className="flex items-center space-x-4 p-3 bg-muted/50 rounded-lg">
+                    <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold ${i===0?"bg-yellow-500 text-white":i===1?"bg-gray-400 text-white":i===2?"bg-orange-500 text-white":"bg-muted text-muted-foreground"}`}>{i+1}</div>
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={r.avatar} />
+                      <AvatarFallback>{r.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{r.name}</h4>
+                      <p className="text-xs text-muted-foreground">{r.area}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-primary">{r.points} pts</p>
+                      <p className="text-xs text-muted-foreground">{r.reports} reports</p>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {r.badges.slice(0, 2).map((b) => {
+                        const badge = getBadgeInfo(b);
+                        return <div key={b} title={badge?.name} className="w-6 h-6 rounded-full bg-secondary/20 flex items-center justify-center text-xs">{badge?.icon}</div>;
+                      })}
+                      {r.badges.length > 2 && <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">+{r.badges.length-2}</div>}
+                    </div>
                   </div>
-                  <div className={`px-2 py-1 text-xs rounded ${c.status==="active"?"bg-green-200":"bg-gray-200"}`}>{c.status}</div>
-                </div>
-                <div className="text-xs flex justify-between mb-1">
-                  <span>{c.participants} participants</span>
-                  <span>{c.progress}% complete</span>
-                </div>
-                <div className="w-full bg-gray-200 h-2 rounded mb-2">
-                  <div className="bg-green-500 h-2 rounded" style={{ width: `${c.progress}%` }}></div>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500">Reward: {c.reward}</span>
-                  <button className="text-xs border px-2 py-1 rounded">View Details</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+                ))}
+              </CardContent>
+            </Card>
 
-      {/* Top Individual Contributors */}
-      <div className="border rounded shadow p-4 bg-white">
-        <div className="text-lg font-bold mb-2">Top Individual Contributors</div>
-        <div className="text-sm text-gray-500 mb-4">Most active community members</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {topReporters.map((rep, i) => (
-            <div key={i} className="border rounded p-3 text-center">
-              <div className="h-12 w-12 mx-auto rounded-full bg-gray-300 flex items-center justify-center mb-2 font-bold">
-                {rep.name.split(" ").map(n=>n[0]).join("")}
-              </div>
-              <div className="font-semibold text-sm">{rep.name}</div>
-              <div className="text-xs text-gray-500 mb-1">{rep.reports} reports</div>
-              <div className="text-xs mb-1">{rep.streak} day streak</div>
-              <div className={`text-sm font-medium ${getLevelColor(rep.level)}`}>{rep.level} Level</div>
-            </div>
+            {/* Top Areas */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Most Active Areas</span>
+                  <Badge variant="secondary">Engagement</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {topAreas.map((a, i) => (
+                  <div key={a.area} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-6 h-6 flex items-center justify-center rounded-full font-bold ${i===0?"bg-yellow-500 text-white":i===1?"bg-gray-400 text-white":i===2?"bg-orange-500 text-white":"bg-muted text-muted-foreground"}`}>{i+1}</div>
+                        <div>
+                          <h4 className="font-medium text-sm">{a.area}</h4>
+                          <p className="text-xs text-muted-foreground">{a.reports} reports • {a.residents} residents</p>
+                        </div>
+                      </div>
+                      <p className="text-sm font-bold text-secondary">{a.engagement}%</p>
+                    </div>
+                    <Progress value={a.engagement} className="h-2" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Campaigns */}
+        <TabsContent value="campaigns" className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {campaigns.map((c) => (
+            <Card key={c.id} className={`cursor-pointer hover:shadow-lg ${selectedCampaign===c.id?"ring-2 ring-primary":""}`} onClick={() => setSelectedCampaign(selectedCampaign===c.id?null:c.id)}>
+              <CardHeader className="flex justify-between items-start">
+                <CardTitle className="text-lg">{c.title}</CardTitle>
+                <Badge variant={c.status==="active"?"default":"secondary"}>{c.status}</Badge>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{c.description}</p>
+                <Progress value={(c.reportsGenerated/c.target)*100} className="h-2 my-2" />
+                <p className="text-xs text-muted-foreground">{new Date(c.startDate).toLocaleDateString()} - {new Date(c.endDate).toLocaleDateString()}</p>
+              </CardContent>
+            </Card>
           ))}
-        </div>
-      </div>
+        </TabsContent>
+
+        {/* Badges */}
+        <TabsContent value="badges" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {badges.map((b) => (
+            <Card key={b.id}>
+              <CardContent className="p-6 text-center">
+                <div className="text-4xl mb-3">{b.icon}</div>
+                <h3 className="font-semibold text-lg mb-2">{b.name}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{b.description}</p>
+                <Badge variant="outline" className={getRarityColor(b.rarity)}>{b.rarity}</Badge>
+                <p className="text-xs text-muted-foreground mt-2">{b.holders} holders</p>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        {/* Insights */}
+        <TabsContent value="insights">
+          <Card>
+            <CardHeader><CardTitle>Community Impact</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Track growth and participation trends here.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

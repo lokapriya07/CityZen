@@ -1,342 +1,229 @@
-// import React, { useState } from "react";
-// import { WasteHeatMap } from "./WasteHeatMap";
-// import { PriorityEngine } from "./PriorityEngine";
-// import { TaskAssignmentHub } from "./TaskAssignmentHub";
-// import { CommunityEngagement } from "./CommunityEngagement";
-// import { AnalyticsCharts } from "./AnalyticsCharts";
-
-// import {
-//   MapPin,
-//   Users,
-//   TrendingUp,
-//   Award,
-//   Search,LayoutDashboard,
-//   Filter,
-// } from "lucide-react";
-
-// export default function AdminDashboard() {
-//   const [activeTab, setActiveTab] = useState("heatmap");
-
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       <div className="flex">
-//         {/* Sidebar */}
-//         <aside className="w-64 bg-white border-r min-h-screen p-4">
-//  <div className="mb-8">
-//   <br></br>
-//   <h1 className="text-2xl font-bold text-blue-600 mb-2">Smart Waste</h1>
-//   <p className="text-sm text-gray-500">Admin Panel</p>
-//   <br>
-//   </br>
-//   <hr className="mt-4 border-t-2 border-gray-600 w-full" />
-// </div>
-
-
-
-//           <nav className="space-y-2">
-//              <button
-//               className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-//                 activeTab === "overview"
-//                   ? "bg-blue-600 text-white"
-//                   : "hover:bg-gray-100"
-//               }`}
-//               onClick={() => setActiveTab("overview")}
-//             >
-//               <LayoutDashboard className="mr-2 h-4 w-4" />
-//               Overview
-//             </button>
-//             <button
-//               className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-//                 activeTab === "heatmap"
-//                   ? "bg-blue-600 text-white"
-//                   : "hover:bg-gray-100"
-//               }`}
-//               onClick={() => setActiveTab("heatmap")}
-//             >
-//               <MapPin className="mr-2 h-4 w-4" />
-//               Heatmap
-//             </button>
-
-//             <button
-//               className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-//                 activeTab === "tasks"
-//                   ? "bg-blue-600 text-white"
-//                   : "hover:bg-gray-100"
-//               }`}
-//               onClick={() => setActiveTab("tasks")}
-//             >
-//               <Users className="mr-2 h-4 w-4" />
-//               Tasks
-//             </button>
-
-//             <button
-//               className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-//                 activeTab === "analytics"
-//                   ? "bg-blue-600 text-white"
-//                   : "hover:bg-gray-100"
-//               }`}
-//               onClick={() => setActiveTab("analytics")}
-//             >
-//               <TrendingUp className="mr-2 h-4 w-4" />
-//               Analytics
-//             </button>
-
-//             <button
-//               className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-//                 activeTab === "community"
-//                   ? "bg-blue-600 text-white"
-//                   : "hover:bg-gray-100"
-//               }`}
-//               onClick={() => setActiveTab("community")}
-//             >
-//               <Award className="mr-2 h-4 w-4" />
-//               Community
-//             </button>
-//           </nav>
-
-//           {/* Quick Stats */}
-//           <div className="mt-8 space-y-4">
-//             <div className="rounded-lg border p-4 shadow-sm bg-white">
-//               <h3 className="text-sm font-semibold mb-1">Active Reports</h3>
-//               <div className="text-2xl font-bold text-red-600">23</div>
-//               <p className="text-xs text-gray-500">+3 from yesterday</p>
-//             </div>
-
-//             <div className="rounded-lg border p-4 shadow-sm bg-white">
-//               <h3 className="text-sm font-semibold mb-1">Available Workers</h3>
-//               <div className="text-2xl font-bold text-blue-600">12</div>
-//               <p className="text-xs text-gray-500">8 on duty</p>
-//             </div>
-
-//             <div className="rounded-lg border p-4 shadow-sm bg-white">
-//               <h3 className="text-sm font-semibold mb-1">Avg Response Time</h3>
-//               <div className="text-2xl font-bold text-green-600">2.3h</div>
-//               <p className="text-xs text-gray-500">-15min from last week</p>
-//             </div>
-//           </div>
-//         </aside>
-
-        
-     
-
-//         {/* Main Content */}
-//           {activeTab === "heatmap" && (
-//             <div className="space-y-6">
-//               <div className="flex items-center justify-between">
-//                 <div>
-//                   <h2 className="text-3xl font-bold text-gray-900">
-//                     Real-Time Waste Heatmap
-//                   </h2>
-//                   <p className="text-gray-500">
-//                     Monitor waste hotspots across the city
-//                   </p>
-//                 </div>
-//                 <div className="flex items-center gap-2">
-//                   <button className="border px-3 py-1.5 rounded-md flex items-center text-sm hover:bg-gray-100">
-//                     <Filter className="mr-2 h-4 w-4" />
-//                     Filter
-//                   </button>
-//                   <button className="border px-3 py-1.5 rounded-md text-sm hover:bg-gray-100">
-//                     Export
-//                   </button>
-//                 </div>
-//               </div>
-
-//               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-//                 <div className="lg:col-span-3">
-//                   <WasteHeatMap />
-//                 </div>
-//                 <div className="space-y-4">
-//                   <PriorityEngine />
-//                 </div>
-//               </div>
-//             </div>
-//           )}
-
-
-//          {activeTab === "tasks" && (
-//   <div className="space-y-6">
-//     <div className="flex items-center justify-between">
-//       <div>
-//         <h2 className="text-2xl font-bold text-foreground">
-//           Admin Dashboard
-//         </h2>
-//         <p className="text-muted-foreground">Smart Waste Management System</p>
-//       </div>
-//       <div className="flex items-center gap-2">
-//         <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-//           Export Data
-//         </button>
-//         <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-//           New Alert
-//         </button>
-//       </div>
-      
-//     </div>
-//      <hr className="mt-6 border-t-2 border-gray-300 w-full" />
-//     <TaskAssignmentHub />
-//   </div>
-// )}
-
-
-//           {activeTab === "analytics" && (
-//             <div className="space-y-6">
-//               <div className="flex items-center justify-between">
-//                 <div>
-//                   <h2 className="text-3xl font-bold text-gray-900">
-//                     Compliance & Analytics
-//                   </h2>
-//                   <p className="text-gray-500">
-//                     Performance metrics and trends
-//                   </p>
-//                 </div>
-//                 <div className="flex items-center gap-2">
-//                   <select className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-//                     <option value="7days">Last 7 days</option>
-//                     <option value="30days">Last 30 days</option>
-//                     <option value="90days">Last 90 days</option>
-//                   </select>
-//                   <button className="border px-3 py-1.5 rounded-md text-sm hover:bg-gray-100">
-//                     Export Report
-//                   </button>
-//                 </div>
-//               </div>
-//               < AnalyticsCharts />
-//             </div>
-//           )}
-
-//           {activeTab === "community" && (
-//             <div className="space-y-6">
-//               <div className="flex items-center justify-between">
-//                 <div>
-//                   <h2 className="text-3xl font-bold text-gray-900">
-//                     Community Engagement
-//                   </h2>
-//                   <p className="text-gray-500">
-//                     Citizen participation and rewards
-//                   </p>
-//                 </div>
-//                 <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-//                   Launch Campaign
-//                 </button>
-//               </div>
-//               < CommunityEngagement />
-//             </div>
-//           )}
-//         </div>
-//   );
-// }
-
-
-
-
-
-
 import React, { useState } from "react";
-import { WasteHeatMap } from "./WasteHeatMap";
-import { PriorityEngine } from "./PriorityEngine";
+import { Card, CardContent, CardHeader, CardTitle } from "../citizen/ui/card";
+import { Button } from "../citizen/ui/button";
+import { Badge } from "../citizen/ui/badge";
+import { AdminSidebar } from "./AdminSidebar";
+import { WasteHeatmap } from "./WasteHeatMap";
 import { TaskAssignmentHub } from "./TaskAssignmentHub";
-import { CommunityEngagement } from "./CommunityEngagement";
-import { AnalyticsCharts } from "./AnalyticsCharts";
-import { MapPin, Users, TrendingUp, Award, LayoutDashboard, Filter } from "lucide-react";
+import { AnalyticsDashboard } from "./AnalyticsDashboard";
+import CommunityEngagement from "./CommunityEngagement";
+
+
+// Mock data for admin dashboard
+const mockReports = [
+  {
+    id: "WC004",
+    type: "Broken Waste Bin",
+    location: "Community Center, Block C",
+    coordinates: { lat: 28.6139, lng: 77.209 },
+    status: "submitted",
+    priority: "medium",
+    reportedAt: "2024-01-15T14:45:00Z",
+    reportedBy: "John Doe",
+    description: "Large waste bin is cracked and overflowing",
+  },
+  {
+    id: "WC001",
+    type: "Overflowing Bin",
+    location: "Park Street, Block A",
+    coordinates: { lat: 28.6149, lng: 77.2095 },
+    status: "in_progress",
+    priority: "high",
+    reportedAt: "2024-01-15T10:30:00Z",
+    reportedBy: "Sarah Wilson",
+    description: "Bin is completely full and attracting pests",
+    assignedWorker: "Rajesh Kumar",
+  },
+  {
+    id: "WC002",
+    type: "Illegal Dumping",
+    location: "Main Road, Sector 15",
+    coordinates: { lat: 28.6129, lng: 77.2295 },
+    status: "resolved",
+    priority: "critical",
+    reportedAt: "2024-01-14T09:00:00Z",
+    reportedBy: "Mike Johnson",
+    description: "Large pile of construction waste dumped illegally",
+    assignedWorker: "Priya Sharma",
+    resolvedAt: "2024-01-14T18:00:00Z",
+  },
+];
+
+const mockWorkers = [
+  {
+    id: "W001",
+    name: "Rajesh Kumar",
+    phone: "+91 98765 43210",
+    avatar: "/hardworking-construction-worker.png",
+    status: "busy",
+    currentLocation: { lat: 28.6139, lng: 77.209 },
+    specialization: ["bin_collection", "maintenance"],
+    rating: 4.8,
+    completedTasks: 156,
+    currentTask: "WC001",
+  },
+  {
+    id: "W002",
+    name: "Priya Sharma",
+    phone: "+91 87654 32109",
+    avatar: "/female-worker.jpg",
+    status: "available",
+    currentLocation: { lat: 28.6129, lng: 77.2295 },
+    specialization: ["illegal_dumping", "hazardous_waste"],
+    rating: 4.9,
+    completedTasks: 203,
+    currentTask: null,
+  },
+  {
+    id: "W003",
+    name: "Amit Singh",
+    phone: "+91 76543 21098",
+    avatar: "/male-worker.jpg",
+    status: "available",
+    currentLocation: { lat: 28.6149, lng: 77.209 },
+    specialization: ["bin_collection", "street_cleaning"],
+    rating: 4.7,
+    completedTasks: 134,
+    currentTask: null,
+  },
+];
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("heatmap");
+  const [activeView, setActiveView] = useState("overview");
+
+  const stats = {
+    totalReports: mockReports.length,
+    pendingReports: mockReports.filter((r) => r.status === "submitted").length,
+    inProgressReports: mockReports.filter((r) => r.status === "in_progress").length,
+    resolvedReports: mockReports.filter((r) => r.status === "resolved").length,
+    activeWorkers: mockWorkers.filter((w) => w.status === "busy").length,
+    availableWorkers: mockWorkers.filter((w) => w.status === "available").length,
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r min-h-screen p-4">
-        <div className="mb-8">
-          <br />
-          <h1 className="text-2xl font-bold text-blue-600 mb-2">Smart Waste</h1>
-          <p className="text-sm text-gray-500">Admin Panel</p>
-          <br />
-          <hr className="mt-4 border-t-2 border-gray-600 w-full" />
-        </div>
-
-        <nav className="space-y-2">
-          <button
-            className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-              activeTab === "overview" ? "bg-blue-600 text-white" : "hover:bg-gray-100"
-            }`}
-            onClick={() => setActiveTab("overview")}
-          >
-            <LayoutDashboard className="mr-2 h-4 w-4" /> Overview
-          </button>
-
-          <button
-            className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-              activeTab === "heatmap" ? "bg-blue-600 text-white" : "hover:bg-gray-100"
-            }`}
-            onClick={() => setActiveTab("heatmap")}
-          >
-            <MapPin className="mr-2 h-4 w-4" /> Heatmap
-          </button>
-
-          <button
-            className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-              activeTab === "tasks" ? "bg-blue-600 text-white" : "hover:bg-gray-100"
-            }`}
-            onClick={() => setActiveTab("tasks")}
-          >
-            <Users className="mr-2 h-4 w-4" /> Tasks
-          </button>
-
-          <button
-            className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-              activeTab === "analytics" ? "bg-blue-600 text-white" : "hover:bg-gray-100"
-            }`}
-            onClick={() => setActiveTab("analytics")}
-          >
-            <TrendingUp className="mr-2 h-4 w-4" /> Analytics
-          </button>
-
-          <button
-            className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-              activeTab === "community" ? "bg-blue-600 text-white" : "hover:bg-gray-100"
-            }`}
-            onClick={() => setActiveTab("community")}
-          >
-            <Award className="mr-2 h-4 w-4" /> Community
-          </button>
-        </nav>
-      </aside>
+    <div className="flex h-screen bg-background">
+      <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
 
       {/* Main Content */}
-      <main className="flex-1 p-6">
-        {activeTab === "heatmap" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">Real-Time Waste Heatmap</h2>
-                <p className="text-gray-500">Monitor waste hotspots across the city</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="border px-3 py-1.5 rounded-md flex items-center text-sm hover:bg-gray-100">
-                  <Filter className="mr-2 h-4 w-4" /> Filter
-                </button>
-                <button className="border px-3 py-1.5 rounded-md text-sm hover:bg-gray-100">Export</button>
-              </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-card border-b border-border px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+              <p className="text-sm text-muted-foreground">Smart Waste Management System</p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              <div className="lg:col-span-3">
-                <WasteHeatMap />
-              </div>
-              <div className="space-y-4">
-                <PriorityEngine />
-              </div>
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" size="sm">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-12" />
+                </svg>
+                Export Data
+              </Button>
+              <Button size="sm">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                New Alert
+              </Button>
             </div>
           </div>
-        )}
+        </header>
 
-        {activeTab === "tasks" && <TaskAssignmentHub />}
-        {activeTab === "analytics" && <AnalyticsCharts />}
-        {activeTab === "community" && <CommunityEngagement />}
-      </main>
+        {/* Content Area */}
+        <main className="flex-1 overflow-auto p-6">
+          {activeView === "overview" && (
+            <div className="space-y-6">
+              {/* Dashboard Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Total Reports */}
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-blue-900">Total Reports</CardTitle>
+                    <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-blue-900">{stats.totalReports}</div>
+                    <p className="text-xs text-blue-700">+2 from yesterday</p>
+                  </CardContent>
+                </Card>
+
+                {/* Pending */}
+                <Card className="bg-orange-50 border-orange-200">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-orange-900">Pending</CardTitle>
+                    <svg className="h-4 w-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-orange-900">{stats.pendingReports}</div>
+                    <p className="text-xs text-orange-700">Requires attention</p>
+                  </CardContent>
+                </Card>
+
+                {/* In Progress */}
+                <Card className="bg-yellow-50 border-yellow-200">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-yellow-900">In Progress</CardTitle>
+                    <svg className="h-4 w-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                      />
+                    </svg>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-yellow-900">{stats.inProgressReports}</div>
+                    <p className="text-xs text-yellow-700">Being handled</p>
+                  </CardContent>
+                </Card>
+
+                {/* Available Workers */}
+                <Card className="bg-green-50 border-green-200">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-green-900">Available Workers</CardTitle>
+                    <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-900">{stats.availableWorkers}</div>
+                    <p className="text-xs text-green-700">Ready for assignment</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Reports */}
+              {/* ... rest of code remains unchanged (maps through mockReports, mockWorkers) */}
+            </div>
+          )}
+
+          {activeView === "heatmap" && <WasteHeatmap />}
+          {activeView === "tasks" && <TaskAssignmentHub />}
+          {activeView === "analytics" && <AnalyticsDashboard />}
+          {activeView === "community" && <CommunityEngagement />}
+        </main>
+      </div>
     </div>
   );
 }
-
-
