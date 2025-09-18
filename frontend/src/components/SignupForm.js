@@ -1,4 +1,6 @@
-import { useState } from "react";
+// SignupForm.js
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function SignupForm() {
@@ -10,8 +12,44 @@ export default function SignupForm() {
   const [role, setRole] = useState("user");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false); // For showing a loading state on the button
-  
+
+  // 🚨 NEW LOCATION-RELATED STATE 🚨
+  const [location, setLocation] = useState(null);
+  const [locationError, setLocationError] = useState("");
+  const [isWorker, setIsWorker] = useState(false); // New state to track if the role is a worker
+
   const navigate = useNavigate();
+
+  // 🚨 NEW useEffect hook to get location on component mount
+  useEffect(() => {
+    // Only attempt to get location if the role is 'worker' or 'admin'
+    if (role === 'worker' || role === 'admin') {
+      setIsWorker(true);
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+            setLocationError("");
+          },
+          (err) => {
+            console.error(err);
+            setLocationError("Location access denied or timed out.");
+            setLocation(null); // Clear location if there's an error
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+      } else {
+        setLocationError("Geolocation is not supported by your browser.");
+      }
+    } else {
+      setIsWorker(false);
+      setLocation(null);
+      setLocationError("");
+    }
+  }, [role]); // Rerun this effect when the role changes
 
   // --- Handles form submission ---
   const handleSubmit = async (e) => {
@@ -31,6 +69,15 @@ export default function SignupForm() {
 
     setLoading(true); // Disable the button and show a loading message
 
+    // --- Prepare the request body
+    const requestBody = { name, email, password, role };
+    // 🚨 NEW LOGIC: Only add location if it was successfully detected AND the role is 'worker' or 'admin'
+    if (location && (role === 'worker' || role === 'admin')) {
+      requestBody.latitude = location.latitude;
+      requestBody.longitude = location.longitude;
+    }
+
+
     // --- 2. API Call to the Backend ---
     try {
       const response = await fetch('http://localhost:8001/api/auth/signup', {
@@ -38,27 +85,22 @@ export default function SignupForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        // If the server returns an error (e.g., "User already exists"), display it
         throw new Error(data.msg || 'Registration failed.');
       }
 
       // --- 3. Handle Success ---
-      // If registration is successful, alert the user and redirect to the login page
       alert('Registration successful! Please log in.');
       navigate("/login");
 
     } catch (err) {
-      // If there was an error during the API call, display it
       setError(err.message);
     } finally {
-      // --- 4. Reset Loading State ---
-      // This runs whether the request succeeded or failed
       setLoading(false);
     }
   };
@@ -132,6 +174,18 @@ export default function SignupForm() {
               <option value="admin">Administrator - Manage operations</option>
             </select>
           </div>
+
+          {isWorker && (
+            <div className="text-sm">
+              {location ? (
+                <p className="text-green-500">✅ Location detected! We'll use this for task assignments.</p>
+              ) : (
+                <p className="text-red-500">
+                  ❌ {locationError || "Waiting for location permission..."}
+                </p>
+              )}
+            </div>
+          )}
 
           {error && <div className="text-red-500 text-sm">{error}</div>}
 

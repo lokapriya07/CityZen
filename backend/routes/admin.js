@@ -29,9 +29,9 @@ async function updateAnalytics(updates) {
   )
 }
 
-// @desc    Get dashboard overview statistics
-// @route   GET /api/admin/dashboard
-// @access  Private (Admin)
+// @desc    Get dashboard overview statistics
+// @route   GET /api/admin/dashboard
+// @access  Private (Admin)
 router.get("/dashboard", async (req, res) => {
   try {
     const today = new Date()
@@ -63,11 +63,19 @@ router.get("/dashboard", async (req, res) => {
       Report.countDocuments({ createdAt: { $gte: startOfMonth } }),
     ])
 
-    const recentReports = await Report.find()
+    // 🚨 FIX: Fetch reports that are UNASSIGNED and need attention (submitted or pending).
+    const recentReports = await Report.find({
+      assignedWorker: { $exists: false },
+      $or: [
+        { status: "submitted" },
+        { status: "pending" },
+        // Add other initial statuses if applicable, e.g., { status: "new" }
+      ]
+    })
       .populate("reporter", "name email")
       .populate("assignedWorker", "name workerDetails.employeeId")
       .sort({ createdAt: -1 })
-      .limit(10)
+      .limit(100) // Increased limit to ensure all tasks are available
 
     const priorityStats = await Report.aggregate([
       { $group: { _id: "$urgency", count: { $sum: 1 } } },
@@ -85,7 +93,6 @@ router.get("/dashboard", async (req, res) => {
           completedReports: {
             $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] },
           },
-          avgRating: { $avg: "$feedback.rating" },
         },
       },
       {
@@ -99,7 +106,7 @@ router.get("/dashboard", async (req, res) => {
               100,
             ],
           },
-          avgRating: { $round: ["$avgRating", 1] },
+          avgRating: { $avg: "$feedback.rating" },
         },
       },
       { $sort: { totalReports: -1 } },
@@ -153,7 +160,9 @@ router.get("/dashboard", async (req, res) => {
   }
 })
 
-// @desc    Get all workers with their performance
+
+// @desc    Get all workers with their performance
+// @route   GET /api/admin/workers
 router.get("/workers", async (req, res) => {
   try {
     const { page = 1, limit = 20, status, department } = req.query
@@ -164,6 +173,7 @@ router.get("/workers", async (req, res) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit)
 
+    // FIX: Only exclude the password field. This includes all of workerDetails.
     const workers = await User.find(filter)
       .select("-password")
       .sort({ "workerDetails.rating": -1 })
@@ -236,8 +246,8 @@ router.get("/workers", async (req, res) => {
   }
 })
 
-// @desc    Assign report to worker (updates Analytics)
-// @route   PUT /api/admin/reports/:reportId/assign
+// @desc    Assign report to worker (updates Analytics)
+// @route   PUT /api/admin/reports/:reportId/assign
 router.put(
   "/reports/:reportId/assign",
   [
@@ -313,9 +323,9 @@ router.put(
 )
 
 
-// @desc    Get analytics data
-// @route   GET /api/admin/analytics
-// @access  Private (Admin)
+// @desc    Get analytics data
+// @route   GET /api/admin/analytics
+// @access  Private (Admin)
 // GET /analytics
 router.get("/analytics", async (req, res) => {
   try {
@@ -471,9 +481,9 @@ router.get("/analytics", async (req, res) => {
   }
 })
 
-// @desc    Update worker status
-// @route   PUT /api/admin/workers/:workerId/status
-// @access  Private (Admin)
+// @desc    Update worker status
+// @route   PUT /api/admin/workers/:workerId/status
+// @access  Private (Admin)
 router.put(
   "/workers/:workerId/status",
   [
@@ -520,9 +530,9 @@ router.put(
   },
 )
 
-// @desc    Get system health and statistics
-// @route   GET /api/admin/system-health
-// @access  Private (Admin)
+// @desc    Get system health and statistics
+// @route   GET /api/admin/system-health
+// @access  Private (Admin)
 router.get("/system-health", async (req, res) => {
   try {
     const [totalUsers, activeUsers, totalReports, pendingReports, totalWorkers, activeWorkers, systemUptime] =
