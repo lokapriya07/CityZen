@@ -357,7 +357,7 @@ export default function TaskQueue() {
   };
 
   return (
-    <LoadScript googleMapsApiKey="YOUR_GOOGLE_MAPS_API_KEY">
+    <LoadScript googleMapsApiKey="AIzaSyByW1p9H83GngOKJM2tEO4RG_M6flF21Qg">
       <div className="space-y-6">
         {tasks.map(task => {
           const nextAction = getNextAction(task.status);

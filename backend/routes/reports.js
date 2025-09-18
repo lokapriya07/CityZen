@@ -632,28 +632,63 @@
 // module.exports = router
 
 
-
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const multer = require("multer");
-const Report = require("../models/Report");
-const { protect } = require("../middleware/auth");
+const Report = require("../models/Report"); // Assuming your Mongoose model is named Report
+const { protect } = require("../middleware/auth"); // Auth middleware for user verification
 
 const router = express.Router();
 
-// Configure multer for in-memory storage. This is necessary to handle file uploads.
+// Configure multer for in-memory storage.
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// @desc    Submit new waste report
-// @route   POST /api/reports
-// @access  Private (requires login)
+// =========================================================================
+// @desc      GET ALL REPORTS FOR THE LOGGED-IN USER
+// @route     GET /api/reports
+// @access    Private (requires login)
+// =========================================================================
+router.get("/", protect, async (req, res) => {
+  try {
+    // The 'protect' middleware ensures req.user is set with the logged-in user's ID.
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ success: false, message: "Authentication required." });
+    }
+
+    // Find all reports where the 'reporter' field matches the logged-in user's ID.
+    // We sort them by creation date, newest first.
+    const reports = await Report.find({ reporter: req.user._id }).sort({ createdAt: -1 });
+
+    // Send the list of reports back to the client
+    res.status(200).json({
+      success: true,
+      count: reports.length,
+      data: reports,
+    });
+
+  } catch (error) {
+    console.error("🔥 Error fetching reports for user:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error: Could not retrieve reports.",
+      error: error.message,
+    });
+  }
+});
+
+
+// =========================================================================
+// @desc      SUBMIT NEW WASTE REPORT
+// @route     POST /api/reports
+// @access    Private (requires login)
+// =========================================================================
 router.post(
   "/",
   protect, // 1. Middleware to check for a valid auth token and add `req.user`
-  upload.single("images"), // 2. Multer middleware to parse the form data and find ONE file named "images". It creates `req.body` and `req.file`.
+  upload.single("images"), // 2. Multer middleware to parse the form data
   [
-    // 3. Validation rules to check the data AFTER multer has created req.body
+    // 3. Validation rules
     body("fullName").notEmpty().withMessage("Full name is required"),
     body("email").isEmail().withMessage("A valid email is required"),
     body("phone").notEmpty().withMessage("Phone number is required"),
@@ -667,27 +702,22 @@ router.post(
   ],
   async (req, res) => {
     try {
-      // First, check for validation errors from the middleware above
+      // Check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         console.log("❌ Validation Errors:", errors.array());
-        // Return a 400 Bad Request status with the specific errors
         return res.status(400).json({ success: false, errors: errors.array() });
       }
 
-      // The `protect` middleware should have added the user to the request
       if (!req.user) {
         return res.status(401).json({ success: false, message: "Authentication error, user not found." });
       }
 
-      // NOTE: For now, we are not uploading the image to Cloudinary to keep it simple.
-      // We will just save the text data. `req.file` would contain the image if we needed it.
-
       const complaintId = `CMP${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-      // Create the report using the data from req.body (which multer created)
+      // Create the report
       const report = await Report.create({
-        reporter: req.user._id, // Get the logged-in user's ID
+        reporter: req.user._id,
         complaintId,
         fullName: req.body.fullName,
         email: req.body.email,
@@ -704,7 +734,7 @@ router.post(
         description: req.body.description,
         preferredContact: req.body.preferredContact,
         previousReports: req.body.previousReports,
-        // images: [], // Intentionally leaving images empty for now
+        // Status and progress will be set to default values in the Mongoose schema
       });
 
       console.log("✅ Report Saved Successfully:", report._id);
