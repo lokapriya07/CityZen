@@ -37,7 +37,7 @@ async def upload_image(file: UploadFile = File(...)):
     image_bytes = await file.read()
 
     # Use Gemini model for classification
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.5-flash")
     response = model.generate_content([
         {"mime_type": file.content_type, "data": image_bytes},
         "Classify this image: Does it contain visible waste, garbage, or trash? Answer only 'yes' or 'no'."
@@ -49,3 +49,7 @@ async def upload_image(file: UploadFile = File(...)):
         return JSONResponse(content={"status": "accepted", "message": "Waste image accepted."})
     else:
         return JSONResponse(content={"status": "rejected", "message": "Please select a valid image."})
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
