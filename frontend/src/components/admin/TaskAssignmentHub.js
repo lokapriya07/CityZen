@@ -46,7 +46,7 @@ const Avatar = ({ children, className = '' }) => (
 );
 
 const AvatarImage = ({ src, className = '', ...props }) => (
-    <img src={src} className={cn("aspect-square h-full w-full", className)} {...props} />
+ <img src={src} className={cn("aspect-square h-full w-full", className)} {...props} />
 );
 
 const AvatarFallback = ({ children, className = '' }) => (

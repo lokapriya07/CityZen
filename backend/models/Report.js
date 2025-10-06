@@ -1,24 +1,3 @@
-// // models/Report.js
-// const mongoose = require("mongoose");
-
-// const TimelineSchema = new mongoose.Schema({
-//   status: { type: String, required: true },
-//   time: { type: Date, required: true },
-// });
-
-// const ReportSchema = new mongoose.Schema({
-//   type: { type: String, required: true },
-//   location: { type: String, required: true },
-//   description: { type: String, required: true },
-//   citizenName: { type: String },
-//   status: { type: String, default: "submitted" },
-//   reportedAt: { type: Date, default: Date.now },
-//   estimatedCompletion: { type: Date },
-//   progress: { type: Number, default: 10 },
-//   timeline: [TimelineSchema],
-// });
-
-// module.exports = mongoose.model("Report", ReportSchema);
 const mongoose = require("mongoose");
 
 const ReportSchema = new mongoose.Schema({
@@ -41,10 +20,14 @@ const ReportSchema = new mongoose.Schema({
   gpsCoordinates: String,
 
   // --- Waste Details (from form) ---
-  wasteType: { type: String, required: true }, // Using wasteType to match the form
+  wasteType: { type: String, required: true },
   wasteAmount: { type: String, required: true },
   urgency: { type: String, required: true },
-  description: { type: String, required: true },
+  
+  // =========================================================================
+  // MODIFIED: 'required' is now set to 'false' for the description.
+  // =========================================================================
+  description: { type: String, required: false },
 
   // --- Additional Info (from form) ---
   preferredContact: String,
