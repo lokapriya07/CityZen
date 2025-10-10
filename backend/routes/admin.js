@@ -296,7 +296,7 @@ router.put(
         assignedBy: req.user.id,
         title: report.title || "Report Task",
         description: report.description || "",
-        priority: report.urgency || "medium",
+        priority: report.urgency ? report.urgency.toLowerCase() : "medium",
         status: "assigned",
         location: report.location || {},
       })
