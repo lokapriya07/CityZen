@@ -9,6 +9,23 @@ const router = express.Router();
 // Configure multer for in-memory storage.
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+async function geocodeAddress(address) {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  try {
+    const response = await axios.get(
+      `https://maps.googleapis.com/maps/api/geocode/json`,
+      { params: { address, key: apiKey } }
+    );
+
+    if (response.data.status === "OK" && response.data.results.length > 0) {
+      const loc = response.data.results[0].geometry.location;
+      return [loc.lng, loc.lat]; // GeoJSON format
+    }
+  } catch (error) {
+    console.error("Geocoding failed:", error.message);
+  }
+  return [0, 0]; // fallback if geocoding fails
+}
 
 // =========================================================================
 // @desc      GET ALL REPORTS FOR THE LOGGED-IN USER
@@ -46,36 +63,41 @@ router.post(
   protect,
   upload.single("images"),
   [
-    // Validation rules
     body("fullName").notEmpty().withMessage("Full name is required"),
     body("email").isEmail().withMessage("A valid email is required"),
     body("phone").notEmpty().withMessage("Phone number is required"),
     body("address").notEmpty().withMessage("Address is required"),
+    body("city").notEmpty().withMessage("City is required"),
+    body("state").notEmpty().withMessage("State is required"),
+    body("pincode").notEmpty().withMessage("Pincode is required"),
     body("wasteType").notEmpty().withMessage("Waste type is required"),
     body("wasteAmount").notEmpty().withMessage("Waste amount is required"),
     body("urgency").notEmpty().withMessage("Urgency is required"),
-
-    // =========================================================================
-    // MODIFIED: The validation for the description has been removed.
-    // body("description")
-    //   .isLength({ min: 10 })
-    //   .withMessage("Description must be at least 10 characters long"),
-    // =========================================================================
   ],
   async (req, res) => {
     try {
+      // --- Validate input ---
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        console.log("❌ Validation Errors:", errors.array());
         return res.status(400).json({ success: false, errors: errors.array() });
       }
 
       if (!req.user) {
-        return res.status(401).json({ success: false, message: "Authentication error, user not found." });
+        return res.status(401).json({ success: false, message: "Authentication error" });
       }
 
       const complaintId = `CMP${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+      // --- Determine coordinates ---
+      let coordinates = [0, 0];
+
+      if (req.body.gpsCoordinates?.lat && req.body.gpsCoordinates?.lng) {
+        coordinates = [req.body.gpsCoordinates.lng, req.body.gpsCoordinates.lat];
+      } else if (req.body.address) {
+        coordinates = await geocodeAddress(req.body.address);
+      }
+
+      // --- Create report ---
       const report = await Report.create({
         reporter: req.user._id,
         complaintId,
@@ -87,7 +109,14 @@ router.post(
         city: req.body.city,
         pincode: req.body.pincode,
         state: req.body.state,
-        gpsCoordinates: req.body.gpsCoordinates,
+
+        // ✅ GeoJSON location
+        location: {
+          type: "Point",
+          coordinates,
+          address: req.body.address,
+        },
+
         wasteType: req.body.wasteType,
         wasteAmount: req.body.wasteAmount,
         urgency: req.body.urgency,
@@ -96,16 +125,13 @@ router.post(
         previousReports: req.body.previousReports,
       });
 
-      console.log("✅ Report Saved Successfully:", report._id);
-
       res.status(201).json({
         success: true,
         message: "Complaint submitted successfully!",
         data: report,
       });
-
     } catch (error) {
-      console.error("🔥 Report Submission Error:", error);
+      console.error("Report Submission Error:", error);
       res.status(500).json({
         success: false,
         message: "Server Error",
