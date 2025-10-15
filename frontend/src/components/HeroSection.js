@@ -1,6 +1,6 @@
 import { ArrowRight, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for redirection
-import { useAuth } from "../context/AuthContext"; // Import the useAuth hook to check login status
+import { useAuth } from "../components/context/AuthContext"; // Import the useAuth hook to check login status
 
 const HeroSection = () => {
   const { user } = useAuth(); // Get the current user from the context

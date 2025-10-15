@@ -1,336 +1,156 @@
-// import React, { useState } from "react";
-// import { MapPin, Clock, Camera, CheckCircle, Navigation, Play, Upload } from "lucide-react";
-
-
-// function TaskQueue() {
-//   const [tasks, setTasks] = useState([
-//     {
-//       id: "WM-001",
-//       location: "Downtown Plaza, Main St & 5th Ave",
-//       wasteType: "General Waste",
-//       priority: "critical",
-//       estimatedTime: "2h",
-//       description: "Large pile of general waste near fountain area. Multiple bags scattered.",
-//       status: "pending",
-//       assignedTime: "09:30 AM",
-//       dueTime: "12:00 PM",
-//     },
-//     {
-//       id: "WM-002",
-//       location: "Park Avenue Residential",
-//       wasteType: "Recyclable",
-//       priority: "medium",
-//       estimatedTime: "1h",
-//       description: "Overflowing recycling bins, need sorting and collection.",
-//       status: "accepted",
-//       assignedTime: "10:15 AM",
-//       dueTime: "02:00 PM",
-//     },
-//     {
-//       id: "WM-003",
-//       location: "Industrial District Block C",
-//       wasteType: "Hazardous",
-//       priority: "high",
-//       estimatedTime: "3h",
-//       description: "Chemical waste containers require special handling and disposal.",
-//       status: "on-way",
-//       assignedTime: "08:00 AM",
-//       dueTime: "01:00 PM",
-//     },
-//   ]);
-
-//   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-//   const [selectedTask, setSelectedTask] = useState(null);
-
-//   const getPriorityColor = (priority) => {
-//     switch (priority) {
-//       case "critical":
-//         return "bg-red-600 text-white";
-//       case "high":
-//         return "bg-orange-500 text-white";
-//       case "medium":
-//         return "bg-yellow-500 text-white";
-//       default:
-//         return "bg-blue-600 text-white";
-//     }
-//   };
-
-//   const getStatusColor = (status) => {
-//     switch (status) {
-//       case "completed":
-//         return "text-green-600";
-//       case "in-progress":
-//         return "text-blue-600";
-//       case "on-way":
-//         return "text-orange-500";
-//       case "accepted":
-//         return "text-purple-600";
-//       default:
-//         return "text-gray-500";
-//     }
-//   };
-
-//   const updateTaskStatus = (taskId, newStatus) => {
-//     setTasks(tasks.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task)));
-//   };
-
-//   const getNextAction = (status) => {
-//     switch (status) {
-//       case "pending":
-//         return { label: "Accept Task", icon: CheckCircle, nextStatus: "accepted" };
-//       case "accepted":
-//         return { label: "On the Way", icon: Navigation, nextStatus: "on-way" };
-//       case "on-way":
-//         return { label: "Start Work", icon: Play, nextStatus: "in-progress" };
-//       case "in-progress":
-//         return { label: "Mark Complete", icon: Upload, nextStatus: "completed" };
-//       default:
-//         return null;
-//     }
-//   };
-
-//   const handleActionClick = (task) => {
-//     const nextAction = getNextAction(task.status);
-//     if (nextAction) {
-//       if (nextAction.nextStatus === "completed") {
-//         setSelectedTask(task.id);
-//         setUploadDialogOpen(true);
-//       } else {
-//         updateTaskStatus(task.id, nextAction.nextStatus);
-//       }
-//     }
-//   };
-
-//   const handleProofUpload = () => {
-//     if (selectedTask) {
-//       updateTaskStatus(selectedTask, "completed");
-//       setUploadDialogOpen(false);
-//       setSelectedTask(null);
-//     }
-//   };
-
-//   return (
-//     <div className="space-y-6">
-//       {/* Task Cards */}
-//       <div className="grid gap-4">
-//         {tasks.map((task) => {
-//           const nextAction = getNextAction(task.status);
-
-//           return (
-//             <div key={task.id} className="bg-white shadow rounded overflow-hidden">
-//               {/* Card Header */}
-//               <div className="flex justify-between items-start p-4 border-b">
-//                 <div>
-//                   <div className="text-lg font-semibold">{task.id}</div>
-//                   <div className="flex gap-2 mt-1">
-//                     <span className={`px-2 py-0.5 rounded text-xs ${getPriorityColor(task.priority)}`}>
-//                       {task.priority.toUpperCase()}
-//                     </span>
-//                     <span className={`px-2 py-0.5 rounded text-xs border ${getStatusColor(task.status)}`}>
-//                       {task.status.replace("-", " ").toUpperCase()}
-//                     </span>
-//                   </div>
-//                 </div>
-//                 <div className="text-sm text-gray-500 text-right">
-//                   <div>Assigned: {task.assignedTime}</div>
-//                   <div>Due: {task.dueTime}</div>
-//                 </div>
-//               </div>
-
-//               {/* Card Content */}
-//               <div className="p-4 space-y-4">
-//                 <div className="grid md:grid-cols-2 gap-4">
-//                   <div className="space-y-2">
-//                     <div className="flex items-start gap-2">
-//                       <MapPin className="h-4 w-4 mt-0.5 text-gray-500" />
-//                       <div>
-//                         <div className="font-medium text-sm">{task.location}</div>
-//                         <div className="text-xs text-gray-500">Waste Type: {task.wasteType}</div>
-//                       </div>
-//                     </div>
-//                     <div className="flex items-center gap-2">
-//                       <Clock className="h-4 w-4 text-gray-500" />
-//                       <span className="text-sm">Estimated: {task.estimatedTime}</span>
-//                     </div>
-//                     <p className="text-sm text-gray-500">{task.description}</p>
-//                   </div>
-
-//                   <div className="bg-gray-100 rounded-lg h-32 flex items-center justify-center">
-//                     <div className="text-center text-gray-500">
-//                       <MapPin className="h-8 w-8 mx-auto mb-2" />
-//                       <div className="text-xs">Location Map</div>
-//                     </div>
-//                   </div>
-//                 </div>
-
-//                 {/* Actions */}
-//                 <div className="flex justify-between pt-2 border-t">
-//                   <div className="flex gap-2">
-//                     <button className="flex items-center gap-1 px-3 py-1 border rounded text-sm hover:bg-gray-100">
-//                       <MapPin className="h-4 w-4" /> Navigate
-//                     </button>
-//                     <button className="px-3 py-1 border rounded text-sm hover:bg-gray-100">Call Support</button>
-//                   </div>
-
-//                   {nextAction && (
-//                     <button
-//                       onClick={() => handleActionClick(task)}
-//                       className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-//                     >
-//                       <nextAction.icon className="h-4 w-4" />
-//                       {nextAction.label}
-//                     </button>
-//                   )}
-//                 </div>
-//               </div>
-//             </div>
-//           );
-//         })}
-//       </div>
-
-//       {/* Upload Proof Modal */}
-//       {uploadDialogOpen && (
-//         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-//           <div className="bg-white rounded-lg w-full max-w-md p-6 space-y-4">
-//             <h2 className="text-lg font-semibold">Upload Completion Proof</h2>
-//             <p className="text-gray-500 text-sm">
-//               Please upload photos showing the completed work for verification.
-//             </p>
-
-//             <div>
-//               <label className="block text-sm font-medium mb-1">Before Photo</label>
-//               <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer">
-//                 <Camera className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-//                 <div className="text-xs text-gray-500">Click to upload before photo</div>
-//               </div>
-//             </div>
-
-//             <div>
-//               <label className="block text-sm font-medium mb-1">After Photo</label>
-//               <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer">
-//                 <Camera className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-//                 <div className="text-xs text-gray-500">Click to upload after photo</div>
-//               </div>
-//             </div>
-
-//             <div>
-//               <label htmlFor="notes" className="block text-sm font-medium mb-1">
-//                 Additional Notes (Optional)
-//               </label>
-//               <input
-//                 id="notes"
-//                 type="text"
-//                 placeholder="Any additional comments about the task completion..."
-//                 className="mt-1 w-full border rounded px-2 py-1 text-sm"
-//               />
-//             </div>
-
-//             <div className="flex gap-2 pt-4">
-//               <button
-//                 onClick={() => setUploadDialogOpen(false)}
-//                 className="flex-1 px-4 py-2 border rounded hover:bg-gray-100"
-//               >
-//                 Cancel
-//               </button>
-//               <button
-//                 onClick={handleProofUpload}
-//                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-//               >
-//                 Submit & Complete
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// export default TaskQueue;
-
-
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MapPin, Clock, CheckCircle, Navigation, Play, Phone } from "lucide-react";
 import { LoadScript, GoogleMap, Marker } from "@react-google-maps/api";
 
-export default function TaskQueue() {
-  const [tasks, setTasks] = useState([
-    {
-      id: "WM-001",
-      location: "Downtown Plaza, Main St & 5th Ave",
-      lat: 40.7128,
-      lng: -74.006,
-      wasteType: "General Waste",
-      priority: "critical",
-      estimatedTime: "2h",
-      description: "Large pile of general waste near fountain area. Multiple bags scattered.",
-      status: "pending",
-      assignedTime: "09:30 AM",
-      dueTime: "12:00 PM",
-      supportNumber: "+1234567890",
-    },
-    {
-      id: "WM-002",
-      location: "Park Avenue Residential",
-      lat: 40.7145,
-      lng: -74.005,
-      wasteType: "Recyclable",
-      priority: "medium",
-      estimatedTime: "1h",
-      description: "Overflowing recycling bins, need sorting and collection.",
-      status: "accepted",
-      assignedTime: "10:15 AM",
-      dueTime: "02:00 PM",
-      supportNumber: "+1234567890",
-    },
-    {
-      id: "WM-003",
-      location: "Industrial District Block C",
-      lat: 40.7132,
-      lng: -74.008,
-      wasteType: "Hazardous",
-      priority: "high",
-      estimatedTime: "3h",
-      description: "Chemical waste containers require special handling and disposal.",
-      status: "on-way",
-      assignedTime: "08:00 AM",
-      dueTime: "01:00 PM",
-      supportNumber: "+1234567890",
-    },
-  ]);
+const fetchApi = async (url, method = "GET", body = null) => {
+  const token = localStorage.getItem("workerToken");
+  if (!token) throw new Error("No auth token found. Please login.");
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case "critical": return "bg-red-600 text-white";
-      case "high": return "bg-orange-500 text-white";
-      case "medium": return "bg-yellow-500 text-white";
-      default: return "bg-blue-600 text-white";
+  const headers = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  };
+
+  const config = { method, headers };
+  if (body) config.body = JSON.stringify(body);
+
+  const finalUrl =
+    url.startsWith("/") && !url.startsWith("//")
+      ? `http://localhost:8001${url}`
+      : url;
+
+  const response = await fetch(finalUrl, config);
+  if (!response.ok) {
+    let errorData = {};
+    try {
+      errorData = await response.json();
+    } catch { }
+    throw new Error(`API Error ${response.status}: ${errorData.msg || response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// 🌍 helper to geocode address → lat/lng if missing
+const geocodeAddress = async (address) => {
+  try {
+    const apiKey = "AIzaSyByW1p9H83GngOKJM2tEO4RG_M6flF21Qg";
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        address
+      )}&key=${apiKey}`
+    );
+    const data = await res.json();
+    if (data.status === "OK") {
+      const loc = data.results[0].geometry.location;
+      return { lat: loc.lat, lng: loc.lng };
+    }
+  } catch (e) {
+    console.error("Geocoding failed for", address, e);
+  }
+  return { lat: 0, lng: 0 };
+};
+
+export default function TaskQueue({ onStatsUpdate }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchAssignedTasks = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetchApi("/api/worker/tasks");
+      console.log("API Response:", res);
+
+      const rawTasks = res.data?.tasks || res.tasks || [];
+
+      // Map tasks and generate friendly IDs
+      const mappedTasks = rawTasks.map((t, index) => {
+        const coords = t.report?.location?.coordinates || [];
+        const lat = coords.length === 2 ? coords[1] : 0;
+        const lng = coords.length === 2 ? coords[0] : 0;
+
+        return {
+          displayId: `W${(index + 1).toString().padStart(3, "0")}`, // Friendly ID
+          id: t._id, // backend ID
+          location: t.report?.location?.address || t.report?.address || "N/A",
+          lat,
+          lng,
+          wasteType: t.report?.wasteType || "General Waste",
+          priority: t.report?.priority || "medium",
+          estimatedTime: t.estimatedTime || "N/A",
+          description: t.report?.description || "",
+          status: t.status || "pending",
+          assignedTime: t.assignedAt || "N/A",
+          dueTime: t.dueTime || "N/A",
+          supportNumber: t.report?.reporterPhone || "N/A",
+        };
+      });
+
+      // Remove completed tasks from dashboard
+      const visibleTasks = mappedTasks.filter((t) => t.status !== "completed");
+      setTasks(visibleTasks);
+      updateCounts(mappedTasks); // counts include completed tasks
+    } catch (err) {
+      console.error("Task Fetch Error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "completed": return "text-green-600";
-      case "in-progress": return "text-blue-600";
-      case "on-way": return "text-orange-500";
-      case "accepted": return "text-purple-600";
-      default: return "text-gray-500";
+  useEffect(() => {
+    const token = localStorage.getItem("workerToken");
+    if (!token) {
+      alert("Please login first.");
+      window.location.href = "/login";
+      return;
     }
+    fetchAssignedTasks();
+  }, []);
+
+  const updateCounts = (taskList) => {
+    const stats = {
+      total: taskList.length,
+      completed: taskList.filter((t) => t.status === "completed").length,
+      inProgress: taskList.filter((t) => t.status === "in-progress").length,
+      pending: taskList.filter((t) => t.status === "pending").length,
+    };
+    if (onStatsUpdate) onStatsUpdate(stats);
   };
 
-  const updateTaskStatus = (taskId, newStatus) => {
-    setTasks(tasks.map(task => task.id === taskId ? { ...task, status: newStatus } : task));
+  const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+      await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", { status: newStatus });
+      let updatedTasks = tasks.map((task) =>
+        task.id === taskId ? { ...task, status: newStatus } : task
+      );
+      // Remove completed tasks from UI
+      updatedTasks = updatedTasks.filter((t) => t.status !== "completed");
+      setTasks(updatedTasks);
+      updateCounts(updatedTasks);
+    } catch (err) {
+      alert("Failed to update task status: " + err.message);
+    }
   };
 
   const getNextAction = (status) => {
     switch (status) {
-      case "pending": return { label: "Accept Task", icon: CheckCircle, nextStatus: "accepted" };
-      case "accepted": return { label: "On the Way", icon: Navigation, nextStatus: "on-way" };
-      case "on-way": return { label: "Start Work", icon: Play, nextStatus: "in-progress" };
-      case "in-progress": return { label: "Mark Complete", icon: CheckCircle, nextStatus: "completed" };
-      default: return null;
+      case "pending":
+      case "assigned":
+      case "new":
+        return { label: "Accept Task", icon: CheckCircle, nextStatus: "accepted" };
+      case "accepted":
+        return { label: "On the Way", icon: Navigation, nextStatus: "on-the-way" };
+      case "on-the-way":
+        return { label: "Start Work", icon: Play, nextStatus: "in-progress" };
+      case "in-progress":
+        return { label: "Mark Complete", icon: CheckCircle, nextStatus: "completed" };
+      default:
+        return null;
     }
   };
 
@@ -340,38 +160,44 @@ export default function TaskQueue() {
   };
 
   const handleNavigate = (task) => {
-    if (!task.lat || !task.lng) {
-      alert("Location not available!");
-      return;
+    if (task.lat && task.lng && task.lat !== 0 && task.lng !== 0) {
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${task.lat},${task.lng}`,
+        "_blank"
+      );
+    } else if (task.location && task.location !== "N/A") {
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.location)}`,
+        "_blank"
+      );
+    } else {
+      alert("Location missing for this task.");
     }
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${task.lat},${task.lng}`;
-    window.open(url, "_blank");
   };
 
   const handleCallSupport = (number) => {
-    if (!number) {
-      alert("Support number not available!");
-      return;
-    }
+    if (!number) return alert("Support number not available!");
     window.open(`tel:${number}`);
   };
+
+  if (loading) return <div className="text-center p-8 text-blue-600">Loading tasks...</div>;
+  if (error) return <div className="text-center p-8 text-red-600">{error}</div>;
 
   return (
     <LoadScript googleMapsApiKey="AIzaSyByW1p9H83GngOKJM2tEO4RG_M6flF21Qg">
       <div className="space-y-6">
-        {tasks.map(task => {
+        {tasks.map((task) => {
           const nextAction = getNextAction(task.status);
           return (
             <div key={task.id} className="bg-white shadow rounded overflow-hidden">
-              {/* Header */}
               <div className="flex justify-between items-start p-4 border-b">
                 <div>
-                  <div className="text-lg font-semibold">{task.id}</div>
+                  <div className="text-lg font-semibold">{task.displayId}</div>
                   <div className="flex gap-2 mt-1">
-                    <span className={`px-2 py-0.5 rounded text-xs ${getPriorityColor(task.priority)}`}>
+                    <span className="px-2 py-0.5 rounded text-xs bg-blue-600 text-white">
                       {task.priority.toUpperCase()}
                     </span>
-                    <span className={`px-2 py-0.5 rounded text-xs border ${getStatusColor(task.status)}`}>
+                    <span className="px-2 py-0.5 rounded text-xs border text-gray-600">
                       {task.status.replace("-", " ").toUpperCase()}
                     </span>
                   </div>
@@ -382,7 +208,6 @@ export default function TaskQueue() {
                 </div>
               </div>
 
-              {/* Content with map on right */}
               <div className="p-4 space-y-4 grid md:grid-cols-2 gap-4 items-center">
                 <div className="space-y-2">
                   <div className="flex items-start gap-2">
@@ -398,7 +223,6 @@ export default function TaskQueue() {
                   </div>
                   <p className="text-sm text-gray-500">{task.description}</p>
 
-                  {/* Action Buttons */}
                   <div className="flex gap-2 mt-2">
                     <button
                       onClick={() => handleNavigate(task)}
@@ -415,19 +239,19 @@ export default function TaskQueue() {
                   </div>
                 </div>
 
-                {/* Map on right side */}
                 <div className="bg-gray-100 rounded-lg h-32 w-full">
                   <GoogleMap
                     mapContainerStyle={{ width: "100%", height: "100%" }}
                     center={{ lat: task.lat, lng: task.lng }}
                     zoom={16}
                   >
-                    <Marker position={{ lat: task.lat, lng: task.lng }} />
+                    {task.lat !== 0 && task.lng !== 0 && (
+                      <Marker position={{ lat: task.lat, lng: task.lng }} />
+                    )}
                   </GoogleMap>
                 </div>
               </div>
 
-              {/* Task Action Button */}
               {nextAction && (
                 <div className="p-4 border-t flex justify-end">
                   <button

@@ -14,9 +14,45 @@ const router = express.Router()
 router.use(protect)
 router.use(authorize("worker"))
 
-// @desc    Get worker dashboard data
-// @route   GET /api/worker/dashboard
-// @access  Private (Worker)
+// @desc    Worker updates their current GPS location
+// @route   PUT /api/workers/location
+// @access  Private (Worker only)
+router.put(
+  "/location",
+  [
+    body("latitude").isFloat().withMessage("Invalid latitude"),
+    body("longitude").isFloat().withMessage("Invalid longitude"),
+  ],
+  handleValidationErrors,
+  async (req, res) => {
+    const { latitude, longitude } = req.body;
+
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ success: false, message: "Authentication failed." });
+    }
+
+    try {
+      // Updates location and saves the timestamp
+      await User.findByIdAndUpdate(req.user.id, {
+        "workerDetails.currentLocation.latitude": latitude,
+        "workerDetails.currentLocation.longitude": longitude,
+        "workerDetails.currentLocation.timestamp": new Date(), // CRITICAL for staleness check
+        isActive: true,
+      });
+
+      res.json({ success: true, message: "Location updated successfully." });
+
+    } catch (error) {
+      console.error("Worker location update failed:", error);
+      res.status(500).json({ success: false, message: "Server Error: Could not update location." });
+    }
+  }
+);
+
+
+// @desc    Get worker dashboard data
+// @route   GET /api/worker/dashboard
+// @access  Private (Worker)
 router.get("/dashboard", async (req, res) => {
   try {
     const workerId = req.user.id
@@ -84,9 +120,9 @@ router.get("/dashboard", async (req, res) => {
   }
 })
 
-// @desc    Get worker's assigned tasks
-// @route   GET /api/worker/tasks
-// @access  Private (Worker)
+// @desc    Get worker's assigned tasks
+// @route   GET /api/worker/tasks
+// @access  Private (Worker)
 router.get("/tasks", async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query
@@ -129,9 +165,9 @@ router.get("/tasks", async (req, res) => {
   }
 })
 
-// @desc    Update task status
-// @route   PUT /api/worker/tasks/:taskId/status
-// @access  Private (Worker)
+// @desc    Update task status
+// @route   PUT /api/worker/tasks/:taskId/status
+// @access  Private (Worker)
 router.put(
   "/tasks/:taskId/status",
   [
@@ -224,9 +260,9 @@ router.put(
   },
 )
 
-// @desc    Get worker performance metrics
-// @route   GET /api/worker/performance
-// @access  Private (Worker)const mongoose = require("mongoose");
+// @desc    Get worker performance metrics
+// @route   GET /api/worker/performance
+// @access  Private (Worker)const mongoose = require("mongoose");
 
 router.get("/performance", async (req, res) => {
   try {
