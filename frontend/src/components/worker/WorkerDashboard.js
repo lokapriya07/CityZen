@@ -7,22 +7,31 @@ import ResourceHub from "./ResourceHub";
 function WorkerDashboard() {
   const [activeView, setActiveView] = useState("tasks");
   const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [taskStats, setTaskStats] = useState({
+    total: 0,
+    completed: 0,
+    inProgress: 0,
+    pending: 0,
+  });
+
+  const handleStatsUpdate = (stats) => {
+    setTaskStats(stats);
+  };
 
   const quickStats = [
-    { label: "Today's Tasks", value: "5", color: "text-blue-600" },
-    { label: "Completed", value: "3", color: "text-green-600" },
-    { label: "In Progress", value: "1", color: "text-orange-500" },
-    { label: "Pending", value: "1", color: "text-yellow-600" },
+    { label: "Today's Tasks", value: taskStats.total, color: "text-blue-600" },
+    { label: "Completed", value: taskStats.completed, color: "text-green-600" },
+    { label: "In Progress", value: taskStats.inProgress, color: "text-orange-500" },
+    { label: "Pending", value: taskStats.pending, color: "text-yellow-600" },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
-        {/* Collapsible Resource Hub Sidebar */}
+        {/* Collapsible Resource Sidebar */}
         <div
-          className={`transition-all duration-300 ${
-            resourcesOpen ? "w-80" : "w-16"
-          } border-r border-gray-300`}
+          className={`transition-all duration-300 ${resourcesOpen ? "w-80" : "w-16"
+            } border-r border-gray-300`}
         >
           <div className="p-4">
             <button
@@ -42,21 +51,18 @@ function WorkerDashboard() {
           </div>
         </div>
 
-        {/* Main Content Area */}
+        {/* Main Area */}
         <main className="flex-1 p-6">
-          {/* Header */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold mb-2">Smart Taskboard</h1>
-            <p className="text-gray-600">
-              Manage your waste collection tasks efficiently
-            </p>
+            <p className="text-gray-600">Manage your waste collection tasks efficiently</p>
           </div>
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            {quickStats.map((stat, index) => (
+            {quickStats.map((stat, i) => (
               <div
-                key={index}
+                key={i}
                 className="bg-white shadow rounded p-4 flex flex-col items-center"
               >
                 <div className={`text-2xl font-bold ${stat.color}`}>
@@ -67,32 +73,30 @@ function WorkerDashboard() {
             ))}
           </div>
 
-          {/* Navigation Tabs */}
+          {/* Navigation */}
           <div className="flex gap-2 mb-6">
             <button
-              className={`px-4 py-2 rounded ${
-                activeView === "tasks"
+              className={`px-4 py-2 rounded ${activeView === "tasks"
                   ? "bg-blue-600 text-white"
                   : "bg-white border border-gray-300 text-gray-700"
-              }`}
+                }`}
               onClick={() => setActiveView("tasks")}
             >
               My Tasks
             </button>
             <button
-              className={`px-4 py-2 rounded ${
-                activeView === "performance"
+              className={`px-4 py-2 rounded ${activeView === "performance"
                   ? "bg-blue-600 text-white"
                   : "bg-white border border-gray-300 text-gray-700"
-              }`}
+                }`}
               onClick={() => setActiveView("performance")}
             >
               Performance
             </button>
           </div>
 
-          {/* Content Views */}
-          {activeView === "tasks" && <TaskQueue />}
+          {/* Content */}
+          {activeView === "tasks" && <TaskQueue onStatsUpdate={handleStatsUpdate} />}
           {activeView === "performance" && <PerformanceTracker />}
         </main>
       </div>
