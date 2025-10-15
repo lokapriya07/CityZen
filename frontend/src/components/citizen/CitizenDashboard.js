@@ -15,6 +15,7 @@ const API_BASE_URL = "http://localhost:8001/api/reports";
 // =========================================================================
 
 const getAuthToken = () => {
+  // This is correct now, as LoginForm.js is saving under the same key 'token'
   return localStorage.getItem("token");
 };
 
@@ -39,7 +40,7 @@ const fetchComplaintsFromBackend = async () => {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      "Authorization": `Bearer ${token} `,
     },
   });
 
@@ -61,6 +62,7 @@ const fetchComplaintsFromBackend = async () => {
     return {
       id: report.complaintId,
       type: report.wasteType,
+      // The location field from the API is likely the GeoJSON-like object
       location: report.address,
       status: report.status || 'submitted',
       progress: report.progress || 10,
@@ -89,19 +91,19 @@ const submitComplaintToBackend = async (reportData) => {
   }
 
   const formData = new FormData();
-  
+
   for (const key in reportData) {
-      if (key === 'photos' && reportData.photos) {
-          formData.append('images', reportData.photos);
-      } else if (reportData[key] !== null && key !== 'photos') {
-          formData.append(key, reportData[key]);
-      }
+    if (key === 'photos' && reportData.photos) {
+      formData.append('images', reportData.photos);
+    } else if (reportData[key] !== null && key !== 'photos') {
+      formData.append(key, reportData[key]);
+    }
   }
 
   const response = await fetch(API_BASE_URL, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${token}`,
+      "Authorization": `Bearer ${token} `,
     },
     body: formData,
   });
@@ -110,7 +112,7 @@ const submitComplaintToBackend = async (reportData) => {
 
   if (!response.ok || !data.success) {
     if (data.errors && Array.isArray(data.errors)) {
-      throw new Error(`Validation Error: ${data.errors.map(e => e.msg).join(', ')}`);
+      throw new Error(`Validation Error: ${data.errors.map(e => e.msg).join(', ')} `);
     }
     throw new Error(data.message || "Failed to submit report.");
   }
@@ -119,6 +121,8 @@ const submitComplaintToBackend = async (reportData) => {
   return {
     id: newReport.complaintId,
     type: newReport.wasteType,
+    // FIX: Ensure 'location' is the full object (which is named 'address' in the newReport) 
+    // to be consistent with the data structure in fetchComplaintsFromBackend.
     location: newReport.address,
     status: newReport.status || 'submitted',
     progress: newReport.progress || 10,
@@ -182,7 +186,7 @@ export default function Dashboard() {
   }, []);
 
   const handleReportSubmit = async (formData) => {
-    setIsLoading(true); 
+    setIsLoading(true);
     setError(null);
     try {
       const newComplaint = await submitComplaintToBackend(formData);
@@ -192,11 +196,11 @@ export default function Dashboard() {
 
       // On success, it switches the tab back to the tracker view
       setActiveTab("track");
-      
+
       // The alert() message has been removed from here.
 
     } catch (err) {
-      alert(`Submission Failed: ${err.message}`);
+      alert(`Submission Failed: ${err.message} `);
       setError(err.message);
       console.error("Submission Error:", err);
     } finally {
@@ -222,12 +226,6 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-      {/* =========================================================================
-        MODIFIED SECTION
-        =========================================================================
-        - The entire <header> has been removed.
-        - The button is now in a simple div at the top.
-      */}
       <div className="mb-6"> {/* This div holds the button and creates space below it */}
         {activeTab === 'track' ? (
           <Button onClick={() => setActiveTab("report")} className="text-sm font-medium bg-emerald-500 hover:bg-emerald-600 text-white">
@@ -269,14 +267,28 @@ export default function Dashboard() {
 
                 <div className="space-y-4">
                   {complaints.map((complaint) => (
-                    <Card key={complaint.id} className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${selectedComplaint && selectedComplaint.id === complaint.id ? "ring-2 ring-emerald-500 shadow-xl bg-emerald-50/50" : "hover:shadow-lg bg-white"}`} onClick={() => setSelectedComplaint(complaint)}>
+                    <Card key={complaint.id} className={`cursor - pointer transition - all duration - 300 hover: shadow - xl hover: -translate - y - 1 ${selectedComplaint && selectedComplaint.id === complaint.id ? "ring-2 ring-emerald-500 shadow-xl bg-emerald-50/50" : "hover:shadow-lg bg-white"} `} onClick={() => setSelectedComplaint(complaint)}>
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
                             <h3 className="font-semibold text-gray-900 text-lg">{complaint.type}</h3>
-                            <p className="text-sm text-gray-500 flex items-center mt-2">📍 {complaint.location}</p>
+                            <p className="text-sm text-gray-500 flex items-center mt-2">
+                              📍 {
+                                // FIX: Ensure that if 'location' is an object, we render a string.
+                                (typeof complaint.location === "object" && complaint.location !== null)
+                                  ? (
+                                    // Prioritize the 'address' field
+                                    complaint.location.address ||
+                                    // Fallback to coordinates string
+                                    `Coords: ${complaint.location.coordinates?.lat || 'N/A'}, ${complaint.location.coordinates?.lng || 'N/A'}`
+                                  )
+                                  // If it's not an object (i.e., it's a string), render it directly
+                                  : complaint.location || "Unknown location"
+                              }
+                            </p>
+
                           </div>
-                          <Badge variant={ complaint.status === "resolved" ? "default" : complaint.status === "in_progress" ? "secondary" : "outline" } className={`capitalize font-medium ${getBadgeClass(complaint.status)}`}>
+                          <Badge variant={complaint.status === "resolved" ? "default" : complaint.status === "in_progress" ? "secondary" : "outline"} className={`capitalize font - medium ${getBadgeClass(complaint.status)} `}>
                             {complaint.status.replace("_", " ")}
                           </Badge>
                         </div>
@@ -302,10 +314,10 @@ export default function Dashboard() {
             </div>
           </div>
         ) : (
-          <ReportForm 
-            onSubmit={handleReportSubmit} 
+          <ReportForm
+            onSubmit={handleReportSubmit}
             onCancel={() => setActiveTab("track")}
-            isSubmitting={isLoading} 
+            isSubmitting={isLoading}
           />
         )}
       </main>

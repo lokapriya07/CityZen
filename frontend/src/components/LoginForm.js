@@ -143,39 +143,33 @@ export default function LoginForm() {
                 throw new Error(data.msg || "Login failed.");
             }
 
-            // --- Save user & token in AuthContext + localStorage ---
-            if (data.user && data.token) {
-                login(data.user, data.token);
+      // --- Save user & token in AuthContext + localStorage ---
+      if (data.user && data.token) {
+        login(data.user, data.token);
+        localStorage.setItem("workerToken", data.token);
+        localStorage.setItem("workerUser", JSON.stringify(data.user));
+      } else {
+        throw new Error("Login response missing user data or token.");
+      }
 
-                // --- THIS IS THE FIX ---
-                // Save the token with the key 'authToken' to match what fetchApi is looking for
-                localStorage.setItem("authToken", data.token);
-                // ---------------------
-
-                // You can keep this or remove it, but 'authToken' is the important one
-                localStorage.setItem("workerUser", JSON.stringify(data.user));
-            } else {
-                throw new Error("Login response missing user data or token.");
-            }
-
-            // --- Navigate based on role ---
-            switch (data.user.role) {
-                case "admin":
-                    navigate("/admin");
-                    break;
-                case "worker":
-                    navigate("/worker");
-                    break;
-                default:
-                    navigate("/citizen");
-                    break;
-            }
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+      // --- Navigate based on role ---
+      switch (data.user.role) {
+        case "admin":
+          navigate("/admin");
+          break;
+        case "worker":
+          navigate("/worker");
+          break;
+        default:
+          navigate("/citizen");
+          break;
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
