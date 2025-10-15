@@ -43,11 +43,17 @@ const protect = async (req, res, next) => {
 // Authorize middleware
 const authorize = (...roles) => {
   return (req, res, next) => {
+    console.log("Authorize middleware:", {
+      user: req.user && req.user.email,
+      role: req.user && req.user.role,
+      expected: roles,
+    });
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ success: false, message: "User role not authorized" });
     }
     next();
   };
 };
+
 
 module.exports = { protect, authorize };
