@@ -29,24 +29,27 @@ export default function LoginForm() {
         throw new Error(data.msg || "Login failed.");
       }
 
-      // --- Save user & token in AuthContext + localStorage ---
-      if (data.user && data.token) {
-        login(data.user, data.token);
-        localStorage.setItem("workerToken", data.token);
-        localStorage.setItem("workerUser", JSON.stringify(data.user));
-      } else {
+      if (!data.user || !data.token) {
         throw new Error("Login response missing user data or token.");
       }
 
-      // --- Navigate based on role ---
+      // --- Save user & token based on role ---
+      login(data.user, data.token);
+
       switch (data.user.role) {
-        case "admin":
-          navigate("/admin");
-          break;
         case "worker":
+          localStorage.setItem("workerToken", data.token);
+          localStorage.setItem("workerUser", JSON.stringify(data.user));
           navigate("/worker");
           break;
-        default:
+        case "admin":
+          localStorage.setItem("adminToken", data.token);
+          localStorage.setItem("adminUser", JSON.stringify(data.user));
+          navigate("/admin");
+          break;
+        default: // citizen
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
           navigate("/citizen");
           break;
       }
