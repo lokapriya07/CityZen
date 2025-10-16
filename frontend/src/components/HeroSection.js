@@ -1,6 +1,7 @@
 import { ArrowRight, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for redirection
-import { useAuth } from "../components/context/AuthContext"; // Import the useAuth hook to check login status
+import { useAuth } from "../components/context/AuthContext"; 
+import myImage from './img.png'; // Make sure the path is correct// Import the useAuth hook to check login status
 
 const HeroSection = () => {
   const { user } = useAuth(); // Get the current user from the context
@@ -67,7 +68,7 @@ const HeroSection = () => {
           <div className="relative">
             <div className="relative z-10">
               <img
-                src="/modern-city-with-clean-streets-and-recycling-bins.png"
+                src={myImage}
                 alt="Clean modern city with waste management"
                 className="w-full h-auto rounded-2xl shadow-2xl"
               />
