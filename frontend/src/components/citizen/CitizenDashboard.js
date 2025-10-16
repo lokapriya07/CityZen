@@ -171,7 +171,7 @@ export default function Dashboard() {
 
     const stats = {
         total: complaints.length,
-        resolved: complaints.filter((c) => c.status === "resolved").length,
+        resolved: complaints.filter((c) => c .status === "resolved").length,
         inProgress: complaints.filter((c) => c.status === "in_progress").length,
         pending: complaints.filter((c) => !["resolved", "in_progress"].includes(c.status)).length,
     };
