@@ -174,7 +174,7 @@ export function ReportForm({ onSubmit, isSubmitting }) {
 
         try {
             const token = localStorage.getItem("token"); // JWT token
-            const response = await fetch("http://localhost:8001/submit-report", {
+            const response = await fetch("http://localhost:8001/api/reports", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
