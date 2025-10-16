@@ -5,7 +5,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { ComplaintTracker } from "./complaint-tracker";
-import { ReportForm } from "./report-form";
+import {ReportForm } from  "./report-form";
 
 // Configuration
 const API_BASE_URL = "http://localhost:8001/api/reports";
