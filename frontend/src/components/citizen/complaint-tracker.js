@@ -7,24 +7,33 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Textarea } from "./ui/textarea";
 import { EnhancedProgressTracker } from "./enhanced-progress-tracker";
 
-// ... (statusConfig remains the same)
-
 export function ComplaintTracker({ complaint }) {
     const [currentTime, setCurrentTime] = useState(new Date());
-    // ... (other state hooks remain the same)
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
 
-    // ... (handleFeedbackSubmit, formatTime, getTimeAgo functions remain the same)
+    // 🧭 Status normalization: maps backend status → frontend expected status
+    const statusMap = {
+        submitted: "submitted",
+        reviewed: "reviewed",
+        assigned: "assigned",
+        "in-progress": "in_progress",
+        "in_progress": "in_progress",
+        completed: "resolved", // ✅ main fix
+        resolved: "resolved",
+    };
+
+    const normalizedStatus = statusMap[complaint.status] || "submitted";
+
     const formatTime = (dateString) => {
-        if (!dateString || dateString.toLowerCase().includes('invalid')) return "N/A";
+        if (!dateString || dateString.toLowerCase().includes("invalid")) return "N/A";
         const date = new Date(dateString);
         return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     };
-    
+
     const getTimeAgo = (dateString) => {
         if (!dateString) return "Just now";
         const diff = currentTime.getTime() - new Date(dateString).getTime();
@@ -35,26 +44,65 @@ export function ComplaintTracker({ complaint }) {
         if (days > 0) return `${days}d ago`;
         if (hours > 0) return `${hours}h ${minutes % 60}m ago`;
         if (minutes > 0) return `${minutes}m ago`;
-        return `Just now`;
+        return "Just now";
     };
 
-
-    const statusArray = ["submitted", "reviewed", "assigned", "in_progress", "resolved"];
-
     const progressSteps = [
-        { id: "submitted", title: "Submitted", description: "Report received", date: complaint.timeline.find((t) => t.status === "submitted")?.time || "Pending", completed: true, current: complaint.status === "submitted" },
-        { id: "reviewed", title: "Under Review", description: "Being evaluated", date: complaint.timeline.find((t) => t.status === "reviewed")?.time || "Pending", completed: statusArray.slice(1).includes(complaint.status), current: complaint.status === "reviewed" },
-        { id: "assigned", title: "Worker Assigned", description: "Team dispatched", date: complaint.timeline.find((t) => t.status === "assigned")?.time || "Pending", completed: statusArray.slice(2).includes(complaint.status), current: complaint.status === "assigned" },
-        { id: "in_progress", title: "In Progress", description: "Work underway", date: complaint.timeline.find((t) => t.status === "in_progress")?.time || "Pending", completed: statusArray.slice(3).includes(complaint.status), current: complaint.status === "in_progress" },
-        { id: "resolved", title: "Resolved", description: "Issue completed", date: complaint.timeline.find((t) => t.status === "resolved")?.time || "Expected " + formatTime(complaint.estimatedCompletion), completed: complaint.status === "resolved", current: complaint.status === "resolved" },
+        {
+            id: "submitted",
+            title: "Submitted",
+            description: "Report received",
+            date: complaint.timeline.find((t) => t.status === "submitted")?.time || "Pending",
+            completed: true,
+            current: normalizedStatus === "submitted",
+        },
+        {
+            id: "reviewed",
+            title: "Under Review",
+            description: "Being evaluated",
+            date: complaint.timeline.find((t) => t.status === "reviewed")?.time || "Pending",
+            completed: ["reviewed", "assigned", "in_progress", "resolved"].includes(normalizedStatus),
+            current: normalizedStatus === "reviewed",
+        },
+        {
+            id: "assigned",
+            title: "Worker Assigned",
+            description: "Team dispatched",
+            date: complaint.timeline.find((t) => t.status === "assigned")?.time || "Pending",
+            completed: ["assigned", "in_progress", "resolved"].includes(normalizedStatus),
+            current: normalizedStatus === "assigned",
+        },
+        {
+            id: "in_progress",
+            title: "In Progress",
+            description: "Work underway",
+            date:
+                complaint.timeline.find((t) =>
+                    ["in-progress", "in_progress"].includes(t.status)
+                )?.time || "Pending",
+            completed: ["in_progress", "resolved"].includes(normalizedStatus),
+            current: normalizedStatus === "in_progress",
+        },
+        {
+            id: "resolved",
+            title: "Resolved",
+            description: "Issue completed",
+            date:
+                complaint.timeline.find((t) =>
+                    ["resolved", "completed"].includes(t.status)
+                )?.time || "Expected " + formatTime(complaint.estimatedCompletion),
+            completed: normalizedStatus === "resolved",
+            current: normalizedStatus === "resolved",
+        },
     ];
 
     const isWorkerAssigned = complaint.worker && complaint.worker.name !== "Not Assigned";
-    
-    // This helper variable makes the JSX cleaner
-    const displayLocation = (typeof complaint.location === "object" && complaint.location !== null)
-        ? complaint.location.address || `Coords: ${complaint.location.coordinates?.lat}, ${complaint.location.coordinates?.lng}`
-        : complaint.location || "Unknown location";
+
+    const displayLocation =
+        typeof complaint.location === "object" && complaint.location !== null
+            ? complaint.location.address ||
+            `Coords: ${complaint.location.coordinates?.lat}, ${complaint.location.coordinates?.lng}`
+            : complaint.location || "Unknown location";
 
     return (
         <div className="space-y-6">
@@ -64,10 +112,7 @@ export function ComplaintTracker({ complaint }) {
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">{complaint.type}</h2>
-                            {/* --- THIS IS THE FIX --- */}
-                            {/* Use the safe 'displayLocation' variable instead of the raw object */}
                             <p className="flex items-center mt-1 text-gray-700">📍 {displayLocation}</p>
-                            {/* ---------------------- */}
                         </div>
                         <Badge variant="secondary" className="font-medium bg-white/80 text-gray-700 border-gray-300">
                             {complaint.id}
@@ -95,7 +140,10 @@ export function ComplaintTracker({ complaint }) {
                 </CardContent>
             </Card>
 
-            <EnhancedProgressTracker steps={progressSteps} estimatedDate={formatTime(complaint.estimatedCompletion)} />
+            <EnhancedProgressTracker
+                steps={progressSteps}
+                estimatedDate={formatTime(complaint.estimatedCompletion)}
+            />
 
             {/* Assigned Worker Card */}
             {isWorkerAssigned && (
@@ -104,7 +152,16 @@ export function ComplaintTracker({ complaint }) {
                         <CardTitle className="flex items-center">🧭 Assigned Worker</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {/* ... content for worker details ... */}
+                        <div className="flex items-center gap-4">
+                            <Avatar>
+                                <AvatarImage src={complaint.worker.avatar} alt={complaint.worker.name} />
+                                <AvatarFallback>{complaint.worker.name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-semibold">{complaint.worker.name}</p>
+                                <p className="text-sm text-gray-600">{complaint.worker.contact}</p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             )}
@@ -116,10 +173,18 @@ export function ComplaintTracker({ complaint }) {
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-2 gap-3">
-                        <Button variant="outline" className="justify-start bg-transparent">💬 Send Message</Button>
-                        <Button variant="outline" className="justify-start bg-transparent">📞 Call Support</Button>
-                        <Button variant="outline" className="justify-start bg-transparent">📍 Share Location</Button>
-                        <Button variant="outline" className="justify-start bg-transparent">⚠️ Report Issue</Button>
+                        <Button variant="outline" className="justify-start bg-transparent">
+                            💬 Send Message
+                        </Button>
+                        <Button variant="outline" className="justify-start bg-transparent">
+                            📞 Call Support
+                        </Button>
+                        <Button variant="outline" className="justify-start bg-transparent">
+                            📍 Share Location
+                        </Button>
+                        <Button variant="outline" className="justify-start bg-transparent">
+                            ⚠️ Report Issue
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
