@@ -4,7 +4,6 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Textarea } from "./ui/textarea";
 import { EnhancedProgressTracker } from "./enhanced-progress-tracker";
 
 export function ComplaintTracker({ complaint }) {
@@ -15,18 +14,39 @@ export function ComplaintTracker({ complaint }) {
         return () => clearInterval(timer);
     }, []);
 
-    // 🧭 Status normalization: maps backend status → frontend expected status
+    // 🧭 Normalize backend → frontend status
     const statusMap = {
         submitted: "submitted",
         reviewed: "reviewed",
         assigned: "assigned",
         "in-progress": "in_progress",
         "in_progress": "in_progress",
-        completed: "resolved", // ✅ main fix
+        completed: "resolved",
         resolved: "resolved",
     };
 
     const normalizedStatus = statusMap[complaint.status] || "submitted";
+
+    // 🎯 Map statuses to progress %
+    const progressMap = {
+        submitted: 10,
+        reviewed: 30,
+        assigned: 50,
+        in_progress: 75,
+        resolved: 100,
+    };
+    const displayProgress = progressMap[normalizedStatus] || 10;
+
+    // ✨ Status icons + badge colors
+    const statusInfo = {
+        submitted: { icon: "📝", color: "bg-gray-200 text-gray-800" },
+        reviewed: { icon: "🔍", color: "bg-blue-100 text-blue-700" },
+        assigned: { icon: "👷", color: "bg-amber-100 text-amber-700" },
+        in_progress: { icon: "🔧", color: "bg-purple-100 text-purple-700" },
+        resolved: { icon: "✅", color: "bg-emerald-100 text-emerald-700" },
+    };
+
+    const currentStatus = statusInfo[normalizedStatus] || statusInfo.submitted;
 
     const formatTime = (dateString) => {
         if (!dateString || dateString.toLowerCase().includes("invalid")) return "N/A";
@@ -48,52 +68,11 @@ export function ComplaintTracker({ complaint }) {
     };
 
     const progressSteps = [
-        {
-            id: "submitted",
-            title: "Submitted",
-            description: "Report received",
-            date: complaint.timeline.find((t) => t.status === "submitted")?.time || "Pending",
-            completed: true,
-            current: normalizedStatus === "submitted",
-        },
-        {
-            id: "reviewed",
-            title: "Under Review",
-            description: "Being evaluated",
-            date: complaint.timeline.find((t) => t.status === "reviewed")?.time || "Pending",
-            completed: ["reviewed", "assigned", "in_progress", "resolved"].includes(normalizedStatus),
-            current: normalizedStatus === "reviewed",
-        },
-        {
-            id: "assigned",
-            title: "Worker Assigned",
-            description: "Team dispatched",
-            date: complaint.timeline.find((t) => t.status === "assigned")?.time || "Pending",
-            completed: ["assigned", "in_progress", "resolved"].includes(normalizedStatus),
-            current: normalizedStatus === "assigned",
-        },
-        {
-            id: "in_progress",
-            title: "In Progress",
-            description: "Work underway",
-            date:
-                complaint.timeline.find((t) =>
-                    ["in-progress", "in_progress"].includes(t.status)
-                )?.time || "Pending",
-            completed: ["in_progress", "resolved"].includes(normalizedStatus),
-            current: normalizedStatus === "in_progress",
-        },
-        {
-            id: "resolved",
-            title: "Resolved",
-            description: "Issue completed",
-            date:
-                complaint.timeline.find((t) =>
-                    ["resolved", "completed"].includes(t.status)
-                )?.time || "Expected " + formatTime(complaint.estimatedCompletion),
-            completed: normalizedStatus === "resolved",
-            current: normalizedStatus === "resolved",
-        },
+        { id: "submitted", title: "Submitted", description: "Report received", completed: true },
+        { id: "reviewed", title: "Under Review", description: "Being evaluated", completed: ["reviewed", "assigned", "in_progress", "resolved"].includes(normalizedStatus) },
+        { id: "assigned", title: "Worker Assigned", description: "Team dispatched", completed: ["assigned", "in_progress", "resolved"].includes(normalizedStatus) },
+        { id: "in_progress", title: "In Progress", description: "Work underway", completed: ["in_progress", "resolved"].includes(normalizedStatus) },
+        { id: "resolved", title: "Resolved", description: "Issue completed", completed: normalizedStatus === "resolved" },
     ];
 
     const isWorkerAssigned = complaint.worker && complaint.worker.name !== "Not Assigned";
@@ -106,46 +85,58 @@ export function ComplaintTracker({ complaint }) {
 
     return (
         <div className="space-y-6">
-            {/* Status Header */}
-            <Card className="border-0 overflow-hidden bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200">
+            {/* 🟢 Header with Status and Progress */}
+            <Card className="border-0 overflow-hidden bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 shadow-sm">
                 <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">{complaint.type}</h2>
-                            <p className="flex items-center mt-1 text-gray-700">📍 {displayLocation}</p>
+                            <h2 className="text-2xl font-bold text-gray-900 capitalize">
+                                {complaint.type}
+                            </h2>
+                            <p className="flex items-center mt-1 text-gray-700">
+                                📍 {displayLocation}
+                            </p>
                         </div>
-                        <Badge variant="secondary" className="font-medium bg-white/80 text-gray-700 border-gray-300">
-                            {complaint.id}
+                        <Badge className={`font-medium border ${currentStatus.color}`}>
+                            {currentStatus.icon} {normalizedStatus.replace("_", " ")}
                         </Badge>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <p className="text-gray-600">Reported</p>
-                            <p className="font-semibold text-gray-900">{getTimeAgo(complaint.reportedAt)}</p>
+                            <p className="font-semibold text-gray-900">
+                                {getTimeAgo(complaint.reportedAt)}
+                            </p>
                         </div>
                         <div>
                             <p className="text-gray-600">Expected Resolution</p>
-                            <p className="font-semibold text-gray-900">{formatTime(complaint.estimatedCompletion)}</p>
+                            <p className="font-semibold text-gray-900">
+                                {formatTime(complaint.estimatedCompletion)}
+                            </p>
                         </div>
                     </div>
 
+                    {/* 🔁 Dynamic Progress Bar */}
                     <div className="mt-4">
                         <div className="flex items-center justify-between text-sm mb-2">
                             <span className="text-gray-700">Overall Progress</span>
-                            <span className="font-bold text-emerald-600">{complaint.progress}%</span>
+                            <span className="font-bold text-emerald-600">
+                                {displayProgress}%
+                            </span>
                         </div>
-                        <Progress value={complaint.progress} className="h-3 bg-white/60" />
+                        <Progress value={displayProgress} className="h-3 bg-white/60" />
                     </div>
                 </CardContent>
             </Card>
 
+            {/* 🔄 Step Tracker */}
             <EnhancedProgressTracker
                 steps={progressSteps}
                 estimatedDate={formatTime(complaint.estimatedCompletion)}
             />
 
-            {/* Assigned Worker Card */}
+            {/* 🧑‍🔧 Assigned Worker */}
             {isWorkerAssigned && (
                 <Card>
                     <CardHeader>
@@ -166,7 +157,7 @@ export function ComplaintTracker({ complaint }) {
                 </Card>
             )}
 
-            {/* Quick Actions Card */}
+            {/* ⚡ Quick Actions */}
             <Card>
                 <CardHeader>
                     <CardTitle>Quick Actions</CardTitle>
