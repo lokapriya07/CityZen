@@ -62,10 +62,9 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-
-// --- LOGIN ROUTE (Unchanged, provided for context) ---
-// @route   POST api/auth/login
-// @desc    Authenticate user & get token
+// --- LOGIN ROUTE ---
+// @route   POST api/auth/login
+// @desc    Authenticate user & get token
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -77,24 +76,28 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
 
     const payload = { id: user.id, role: user.role };
+    const secret = process.env.JWT_SECRET || JWT_SECRET;
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET || JWT_SECRET,
-      { expiresIn: '10y' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({
-          token,
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-          },
-        });
-      }
-    );
+    // Different expiration times per role (optional)
+    const tokenOptions = { expiresIn: '10y' };
+
+    // Generate token
+    const token = jwt.sign(payload, secret, tokenOptions);
+
+    // 🔥 Role-specific token naming
+    let tokenKey = 'authToken';
+    if (user.role === 'worker') tokenKey = 'workerToken';
+    else if (user.role === 'admin') tokenKey = 'adminToken';
+
+    res.json({
+      [tokenKey]: token, // send key dynamically based on role
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

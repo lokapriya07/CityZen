@@ -5,7 +5,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { ComplaintTracker } from "./complaint-tracker";
-import { ReportForm } from "./report-form";
+import {ReportForm } from  "./report-form";
 
 // Configuration
 const API_BASE_URL = "http://localhost:8001/api/reports";
@@ -15,8 +15,17 @@ const API_BASE_URL = "http://localhost:8001/api/reports";
 // =========================================================================
 
 const getAuthToken = () => {
-    // CRITICAL FIX: Use 'authToken' to match what LoginForm.js saves.
-    return localStorage.getItem("authToken");
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    const role = userData.role;
+
+    switch (role) {
+        case "admin":
+            return localStorage.getItem("adminToken");
+        case "worker":
+            return localStorage.getItem("workerToken");
+        default:
+            return localStorage.getItem("authToken"); // citizen
+    }
 };
 
 const UNASSIGNED_WORKER = {
@@ -31,7 +40,6 @@ const fetchComplaintsFromBackend = async () => {
     if (!token) {
         throw new Error("Authentication required. Please log in.");
     }
-
     const response = await fetch(API_BASE_URL, {
         method: "GET",
         headers: {
