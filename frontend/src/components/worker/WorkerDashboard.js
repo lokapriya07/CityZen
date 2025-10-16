@@ -30,34 +30,33 @@ const fetchApi = async (url, method = "GET", body = null) => {
 function WorkerDashboard() {
   const [activeView, setActiveView] = useState("tasks");
   const [resourcesOpen, setResourcesOpen] = useState(false);
-  
-  // --- State for tasks, loading, and stats is now here ---
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, inProgress: 0, pending: 0 });
 
-  // --- Data fetching logic is now in the dashboard ---
   const fetchAssignedTasks = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetchApi("/api/worker/tasks");
       const rawTasks = res.data?.tasks || res.tasks || [];
+      
       const mappedTasks = rawTasks.map((t, index) => ({
         displayId: `W${(index + 1).toString().padStart(3, "0")}`,
         id: t._id,
-        location: t.report?.location?.address || t.report?.address || "N/A",
-        lat: t.report?.location?.coordinates?.[1] || 0,
-        lng: t.report?.location?.coordinates?.[0] || 0,
-        wasteType: t.report?.wasteType || "General Waste",
-        priority: t.report?.priority || "medium",
-        estimatedTime: t.estimatedTime || "N/A",
-        description: t.report?.description || "",
+        title: t.title,
+        location: t.location?.address || "N/A",
+        lat: t.location?.coordinates?.lat || 0,
+        lng: t.location?.coordinates?.lng || 0,
+        priority: t.priority,
+        description: t.description || "",
         status: t.status || "pending",
-        assignedTime: t.assignedAt || "N/A",
-        dueTime: t.dueTime || "N/A",
-        supportNumber: t.report?.reporterPhone || "N/A",
+        estimatedTime: t.estimatedDuration || "N/A",
+        assignedTime: t.createdAt || "N/A",
+        dueTime: t.scheduledDate || "N/A",
+        wasteType: t.report?.wasteType || "N/A",
+        supportNumber: t.report?.phone || "N/A",
       }));
       
       const visibleTasks = mappedTasks.filter((t) => t.status !== "completed");
@@ -90,7 +89,7 @@ function WorkerDashboard() {
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
     try {
       await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", { status: newStatus });
-      fetchAssignedTasks(); // Refetch all tasks to ensure data is consistent
+      fetchAssignedTasks(); // Refetch all tasks to get the latest state
     } catch (err) {
       alert("Failed to update task status: " + err.message);
     }
