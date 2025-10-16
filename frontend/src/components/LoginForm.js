@@ -29,29 +29,32 @@ export default function LoginForm() {
                 throw new Error(data.msg || "Login failed.");
             }
 
-            // --- Save user & token based on role ---
-            if (data.user && data.token) {
+            // --- Extract token based on possible key names ---
+            const token =
+                data.token || data.authToken || data.workerToken || data.adminToken;
+
+            if (data.user && token) {
                 const role = data.user.role;
 
                 // Save in context
-                login(data.user, data.token);
+                login(data.user, token);
 
-                // Save token with role-based key
+                // Save token & user based on role
                 switch (role) {
                     case "admin":
-                        localStorage.setItem("adminToken", data.token);
+                        localStorage.setItem("adminToken", token);
                         localStorage.setItem("user", JSON.stringify(data.user));
                         navigate("/admin");
                         break;
 
                     case "worker":
-                        localStorage.setItem("workerToken", data.token);
+                        localStorage.setItem("workerToken", token);
                         localStorage.setItem("user", JSON.stringify(data.user));
                         navigate("/worker");
                         break;
 
                     default:
-                        localStorage.setItem("authToken", data.token);
+                        localStorage.setItem("authToken", token);
                         localStorage.setItem("user", JSON.stringify(data.user));
                         navigate("/citizen");
                         break;
@@ -59,19 +62,19 @@ export default function LoginForm() {
             } else {
                 throw new Error("Login response missing user data or token.");
             }
-
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
-
-  };
+    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
             <div className="w-full max-w-md mx-auto border p-6 rounded shadow-lg bg-white">
-                <h2 className="text-2xl font-bold text-center text-green-700">Welcome Back</h2>
+                <h2 className="text-2xl font-bold text-center text-green-700">
+                    Welcome Back
+                </h2>
                 <p className="text-center mb-4">Sign in to your CityZen account</p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
