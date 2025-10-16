@@ -202,7 +202,6 @@
 
 // export default Navigation;  
 
->>>>>>> ee40743 (Your commit message here)
 import { useState } from "react";
 import { Leaf } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
