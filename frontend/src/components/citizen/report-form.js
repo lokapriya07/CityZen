@@ -113,45 +113,56 @@ export function ReportForm({ onSubmit, isSubmitting }) {
             resetFileInput('');
             return;
         }
-    
+
         const fileToValidate = files[0];
         const previewUrl = URL.createObjectURL(fileToValidate);
-    
+
         const uploadFormData = new FormData();
         uploadFormData.append("file", fileToValidate);
-    
+
         setClassificationResult("Classifying, please wait...");
         setFileLabel(`Validating ${fileToValidate.name}...`);
         setImagePreview('');
-    
+
         try {
+            const token = localStorage.getItem("token"); // JWT token from login
             const response = await fetch("http://localhost:8000/upload-image", {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`, // <--- Add token here
+                },
                 body: uploadFormData,
             });
+
+            if (response.status === 401 || response.status === 403) {
+                resetFileInput("❌ Submission Failed: Authentication required. Please log in.");
+                return;
+            }
+
             const res = await response.json();
             const resultMessage = res.message || "";
-    
+
             if (resultMessage.toLowerCase().includes("please select a valid image")) {
                 resetFileInput("❌ Invalid image. Please upload a photo of garbage.");
                 return;
             }
-    
+
             setClassificationResult(resultMessage);
             setFormData(prev => ({ ...prev, photos: fileToValidate }));
             setFileLabel(`📷 ${fileToValidate.name} selected`);
             setFileLabelStyle({ borderColor: 'var(--success-color)', background: '#e8f5e9', color: 'var(--success-color)' });
             setImagePreview(previewUrl);
+
         } catch (err) {
             console.error(err);
-            resetFileInput("Error: Could not classify image. Please try again.");
+            resetFileInput("❌ Error: Could not classify image. Please try again.");
         }
     };
+
     
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Check for required fields
         if (!formData.photos) {
             alert("Please upload and validate a photo of the waste spot before submitting.");
             return;
@@ -160,17 +171,35 @@ export function ReportForm({ onSubmit, isSubmitting }) {
             alert("Please select an urgency level for the report.");
             return;
         }
-        // REMOVED: No longer checking if description has min 10 characters
-        // if (formData.description.length < 10) {
-        //     alert("Description must be at least 10 characters long.");
-        //     return;
-        // }
 
+        try {
+            const token = localStorage.getItem("token"); // JWT token
+            const response = await fetch("http://localhost:8001/submit-report", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`, // <--- Add token here
+                },
+                body: JSON.stringify(formData),
+            });
 
-        if (onSubmit) {
-            onSubmit(formData);
+            if (response.status === 401 || response.status === 403) {
+                alert("❌ Submission Failed: Authentication required. Please log in.");
+                return;
+            }
+
+            const result = await response.json();
+            alert(result.message || "✅ Report submitted successfully!");
+            setFormData(initialFormData);
+            setProgress(0);
+            resetFileInput();
+
+        } catch (err) {
+            console.error(err);
+            alert("❌ Error submitting report. Please try again.");
         }
     };
+
 
     const indianStates = [ "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi" ];
 
