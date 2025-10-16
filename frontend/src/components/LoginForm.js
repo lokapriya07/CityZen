@@ -29,32 +29,43 @@ export default function LoginForm() {
                 throw new Error(data.msg || "Login failed.");
             }
 
-      // --- Save user & token in AuthContext + localStorage ---
-      if (data.user && data.token) {
-        login(data.user, data.token);
-        localStorage.setItem("workerToken", data.token);
-        localStorage.setItem("workerUser", JSON.stringify(data.user));
-      } else {
-        throw new Error("Login response missing user data or token.");
-      }
+            // --- Save user & token based on role ---
+            if (data.user && data.token) {
+                const role = data.user.role;
 
-      // --- Navigate based on role ---
-      switch (data.user.role) {
-        case "admin":
-          navigate("/admin");
-          break;
-        case "worker":
-          navigate("/worker");
-          break;
-        default:
-          navigate("/citizen");
-          break;
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+                // Save in context
+                login(data.user, data.token);
+
+                // Save token with role-based key
+                switch (role) {
+                    case "admin":
+                        localStorage.setItem("adminToken", data.token);
+                        localStorage.setItem("user", JSON.stringify(data.user));
+                        navigate("/admin");
+                        break;
+
+                    case "worker":
+                        localStorage.setItem("workerToken", data.token);
+                        localStorage.setItem("user", JSON.stringify(data.user));
+                        navigate("/worker");
+                        break;
+
+                    default:
+                        localStorage.setItem("authToken", data.token);
+                        localStorage.setItem("user", JSON.stringify(data.user));
+                        navigate("/citizen");
+                        break;
+                }
+            } else {
+                throw new Error("Login response missing user data or token.");
+            }
+
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+
   };
 
     return (
