@@ -496,18 +496,28 @@ import { Progress } from "./ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 // Using the 'Check' icon for a cleaner look
 import { Check } from "lucide-react";
+// Using the 'Check' icon for a cleaner look
+import { Check } from "lucide-react";
 
 //=================================================================
 // 1. HELPER COMPONENT (HorizontalProgressTracker)
 // ✅ This component has been redesigned for a more beautiful and modern look.
+// 1. HELPER COMPONENT (HorizontalProgressTracker)
+// ✅ This component has been redesigned for a more beautiful and modern look.
 //=================================================================
+function HorizontalProgressTracker({ steps, estimatedDate }) {
+  // Find the index of the last step that is marked as 'completed'.
 function HorizontalProgressTracker({ steps, estimatedDate }) {
   // Find the index of the last step that is marked as 'completed'.
   const activeStepIndex = steps.findLastIndex(s => s.completed);
 
   return (
     <Card className="overflow-hidden">
+    <Card className="overflow-hidden">
       <CardContent className="p-6">
+        {/* Date Label at the Top */}
+        <div className="text-center mb-10 text-sm text-gray-500">
+          Estimated Completion Date: <span className="font-semibold text-gray-800">{estimatedDate || 'N/A'}</span>
         {/* Date Label at the Top */}
         <div className="text-center mb-10 text-sm text-gray-500">
           Estimated Completion Date: <span className="font-semibold text-gray-800">{estimatedDate || 'N/A'}</span>
@@ -518,11 +528,25 @@ function HorizontalProgressTracker({ steps, estimatedDate }) {
             const isCompleted = index <= activeStepIndex;
             const isLineCompleted = index < activeStepIndex;
             
+            const isCompleted = index <= activeStepIndex;
+            const isLineCompleted = index < activeStepIndex;
+            
             return (
               <React.Fragment key={step.id}>
                 {/* The Step (Icon + Text) */}
                 <div className="flex flex-col items-center text-center w-1/5 min-w-0 px-2">
+                <div className="flex flex-col items-center text-center w-1/5 min-w-0 px-2">
                   
+                  {/* Icon with beautiful gradients and shadows */}
+                  <div className={`
+                    w-10 h-10 rounded-full flex items-center justify-center border-2
+                    transition-all duration-500 ease-in-out
+                    ${isCompleted 
+                      ? 'bg-gradient-to-br from-emerald-500 to-green-500 border-emerald-600 shadow-lg shadow-emerald-500/30' 
+                      : 'border-gray-200 bg-white'
+                    }
+                  `}>
+                    {isCompleted && <Check className="w-6 h-6 text-white transform transition-transform duration-500 scale-100" />}
                   {/* Icon with beautiful gradients and shadows */}
                   <div className={`
                     w-10 h-10 rounded-full flex items-center justify-center border-2
@@ -536,7 +560,14 @@ function HorizontalProgressTracker({ steps, estimatedDate }) {
                   </div>
                   
                   {/* Text Container */}
+                  {/* Text Container */}
                   <div className="mt-3">
+                    <p className={`font-semibold text-sm transition-colors duration-500 ${isCompleted ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {step.title}
+                    </p>
+                    <p className="text-xs text-gray-500 leading-tight mt-1 transition-opacity duration-500 h-8">
+                      {isCompleted ? step.description : ''}
+                    </p>
                     <p className={`font-semibold text-sm transition-colors duration-500 ${isCompleted ? 'text-gray-900' : 'text-gray-400'}`}>
                       {step.title}
                     </p>
@@ -547,7 +578,14 @@ function HorizontalProgressTracker({ steps, estimatedDate }) {
                 </div>
 
                 {/* The Connecting Line with Gradient */}
+                {/* The Connecting Line with Gradient */}
                 {index < steps.length - 1 && (
+                  <div className="flex-auto h-1 bg-gray-200 mt-[18px] rounded-full overflow-hidden">
+                     <div
+                        className={`h-full bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-500 ease-in-out`}
+                        style={{ width: isLineCompleted ? '100%' : '0%' }}
+                      />
+                  </div>
                   <div className="flex-auto h-1 bg-gray-200 mt-[18px] rounded-full overflow-hidden">
                      <div
                         className={`h-full bg-gradient-to-r from-emerald-500 to-green-500 transition-all duration-500 ease-in-out`}
@@ -567,6 +605,7 @@ function HorizontalProgressTracker({ steps, estimatedDate }) {
 
 //=================================================================
 // 2. MAIN COMPONENT (ComplaintTracker)
+// No changes needed here.
 // No changes needed here.
 //=================================================================
 
@@ -600,6 +639,7 @@ useEffect(() => {
     }, []);
 
     // --- Status and Progress Logic ---
+    // --- Status and Progress Logic ---
     const statusMap = {
         submitted: "submitted",
         reviewed: "reviewed",
@@ -630,9 +670,14 @@ useEffect(() => {
     const currentStatus = statusInfo[normalizedStatus] || statusInfo.submitted;
 
     // --- Helper Functions ---
+    // --- Helper Functions ---
     const formatTime = (dateString) => {
         if (!dateString) return "N/A"; 
         const date = new Date(dateString);
+        if (isNaN(date.getTime())) { 
+            return "N/A"; 
+        }
+        return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
         if (isNaN(date.getTime())) { 
             return "N/A"; 
         }
@@ -653,6 +698,7 @@ useEffect(() => {
     };
 
     // --- Data for Helper Component ---
+    // --- Data for Helper Component ---
     const progressSteps = [
         { id: "submitted", title: "Submitted", description: "Report received", completed: true },
         { id: "reviewed", title: "Under Review", description: "Being evaluated", completed: ["reviewed", "assigned", "in_progress", "resolved"].includes(normalizedStatus) },
@@ -670,12 +716,22 @@ useEffect(() => {
             : complaint.location || "Unknown location";
 
     // --- API Call for Feedback ---
+    // --- API Call for Feedback ---
     const handleSubmitFeedback = async () => {
         const token = getAuthToken();
         if (!token) {
             alert("You must be logged in to submit feedback.");
             return;
         }
+
+        const feedbackData = {
+            serviceRating: serviceRating,
+            workerRating: workerRating,
+            comments: comment
+        };
+        
+        console.log("Submitting feedback for complaint ID:", complaint.id);
+        console.log("Submitting this data:", JSON.stringify(feedbackData, null, 2));
 
         const feedbackData = {
             serviceRating: serviceRating,
@@ -702,18 +758,23 @@ useEffect(() => {
                 setFeedbackSubmitted(true);
             } else {
                 console.error("Feedback submission failed. Server response:", data);
+                console.error("Feedback submission failed. Server response:", data);
                 let errorMessage = data.message || (data.errors ? data.errors[0].msg : "Please try again.");
                 alert(`Feedback failed: ${errorMessage}`);
             }
         } catch (error) {
             console.error("A network or other critical error occurred:", error);
             alert("CRITICAL ERROR: Could not connect to server. Check console.");
+            console.error("A network or other critical error occurred:", error);
+            alert("CRITICAL ERROR: Could not connect to server. Check console.");
         }
     };
 
     // --- Render JSX ---
+    // --- Render JSX ---
     return (
         <div className="space-y-6">
+            {/* 🟢 Header with Status and Progress */}
             {/* 🟢 Header with Status and Progress */}
             <Card className="border-0 overflow-hidden bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 shadow-sm">
                 <CardContent className="p-6">
@@ -760,10 +821,14 @@ useEffect(() => {
 
             {/* 🔄 Step Tracker (Helper Component) */}
             <HorizontalProgressTracker
+            {/* 🔄 Step Tracker (Helper Component) */}
+            <HorizontalProgressTracker
                 steps={progressSteps}
+                estimatedDate={formatTime(complaint.estimatedCompletion)}
                 estimatedDate={formatTime(complaint.estimatedCompletion)}
             />
 
+            {/* 🧑‍🔧 Assigned Worker (NEW DESIGN) */}
             {/* 🧑‍🔧 Assigned Worker (NEW DESIGN) */}
             {isWorkerAssigned && (
                 <Card>
@@ -774,6 +839,7 @@ useEffect(() => {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
+                        {/* --- Worker Info & Actions --- */}
                         {/* --- Worker Info & Actions --- */}
                         <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-4">
@@ -869,10 +935,67 @@ useEffect(() => {
                                 </div>
                             )}
                         </div>
+
+                        {/* --- Live Location Section --- */}
+                        <div className="mt-6">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-semibold text-md">Live Location</h3>
+                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 shadow-sm">
+                                    <span className="relative flex h-2 w-2 mr-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                    </span>
+                                    Live
+                                </Badge>
+                            </div>
+
+                            <div className="relative h-32 rounded-lg bg-gradient-to-r from-blue-100 via-teal-50 to-green-100 p-4 flex items-center justify-between overflow-hidden border border-gray-200">
+                                <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-blue-300 transform -translate-y-1/2"></div>
+                                <div className="absolute left-1/3 top-1/2 transform -translate-x-1/2 -translate-y-full text-center">
+                                    <span className="text-4xl text-pink-500" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>📍</span>
+                                    <div className="p-1.5 px-2 bg-white/70 rounded-md backdrop-blur-sm shadow-md mt-1">
+                                        <p className="text-xs font-semibold text-gray-800 whitespace-nowrap">Worker Location</p>
+                                        {complaint.worker.location?.distance && (
+                                            <p className="text-xs text-gray-600 whitespace-nowrap">
+                                                {complaint.worker.location.distance} km from you
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="absolute right-1/4 top-1/2 transform -translate-y-1/2">
+                                    <span className="flex h-5 w-5 relative">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-5 w-5 bg-green-600 border-2 border-white shadow-lg"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* --- Location & ETA Details --- */}
+                        <div className="mt-4 space-y-2">
+                            {complaint.worker.location?.currentAddress && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xl">📍</span>
+                                    <span className="text-sm text-gray-700">
+                                        Currently at: <span className="font-medium text-gray-900">{complaint.worker.location.currentAddress}</span>
+                                    </span>
+                                </div>
+                            )}
+                            {complaint.worker.location?.eta && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xl">⏱️</span>
+                                    <span className="text-sm text-gray-700">
+                                        ETA to your location: <span className="font-medium text-gray-900">{complaint.worker.location.eta}</span>
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
             )}
 
+            {/* 🌟 Feedback Section (Visible when resolved) */}
+            {complaint.status === "completed" && ( 
             {/* 🌟 Feedback Section (Visible when resolved) */}
             {complaint.status === "completed" && ( 
                 <Card className="border border-emerald-300 bg-emerald-50 shadow-sm">
@@ -884,6 +1007,7 @@ useEffect(() => {
                             <div className="text-center space-y-4">
                                 <p className="text-gray-700">
                                     Great news! Your issue has been resolved. Help us improve our service by sharing your feedback.
+                                    Great news! Your issue has been resolved. Help us improve our service by sharing your feedback.
                                 </p>
                                 <Button onClick={() => setShowFeedbackForm(true)} className="bg-emerald-600 hover:bg-emerald-700">
                                     ⭐ Rate Our Service
@@ -891,6 +1015,18 @@ useEffect(() => {
                             </div>
                         ) : !feedbackSubmitted ? (
                             <div className="space-y-4">
+                                <h3 className="font-semibold text-lg">Rate the Service Quality</h3>
+                                <p className="text-gray-600">How satisfied are you with the resolution?</p>
+                                <div className="flex gap-2 text-2xl">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <span
+                                            key={star}
+                                            onClick={() => setServiceRating(star)}
+                                            className={`cursor-pointer ${star <= serviceRating ? "text-yellow-400" : "text-gray-300"}`}
+                                        >
+                                            ★
+                                        </span>
+                                    ))}
                                 <h3 className="font-semibold text-lg">Rate the Service Quality</h3>
                                 <p className="text-gray-600">How satisfied are you with the resolution?</p>
                                 <div className="flex gap-2 text-2xl">
@@ -925,19 +1061,45 @@ useEffect(() => {
                                                     </span>
                                                 ))}
                                             </div>
+                                    <div className="flex items-center gap-3 mt-3">
+                                        <Avatar>
+                                            <AvatarImage src={complaint.worker.avatar} />
+                                            <AvatarFallback>{complaint.worker.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-semibold">{complaint.worker.name}</p>
+                                            <p className="text-sm text-gray-600">Rate the worker's performance</p>
+                                            <div className="flex gap-1 text-xl mt-1">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <span
+                                                        key={star}
+                                                        onClick={() => setWorkerRating(star)}
+                                                        className={`cursor-pointer ${star <= workerRating ? "text-yellow-400" : "text-gray-300"}`}
+                                                    >
+                                                        ★
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
 
+
                                 <textarea
                                     className="w-full p-2 border rounded-md text-sm mt-4"
                                     rows="3"
+                                    placeholder="Share your experience, suggestions, or any feedback..."
                                     placeholder="Share your experience, suggestions, or any feedback..."
                                     value={comment}
                                     onChange={(e) => setComment(e.target.value)}
                                 ></textarea>
 
                                 <div className="flex justify-end gap-2 mt-2">
+                                    <Button
+                                        onClick={handleSubmitFeedback}
+                                        disabled={serviceRating === 0} // Must rate service to submit
+                                        className="bg-emerald-600 hover:bg-emerald-700"
+                                    >
                                     <Button
                                         onClick={handleSubmitFeedback}
                                         disabled={serviceRating === 0} // Must rate service to submit
