@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-=======
+
 // import { useState } from "react";
 // import { Leaf } from "lucide-react";
 // // 1. Import useNavigate from react-router-dom
@@ -201,7 +200,6 @@
 // };
 
 // export default Navigation;  
-
 import { useState } from "react";
 import { Leaf } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
