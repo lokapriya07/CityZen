@@ -1,10 +1,41 @@
 "use client";
 
-import React from "react";
-import { MapPin, Clock, CheckCircle, Navigation, Play, Phone } from "lucide-react";
-import { GoogleMap, Marker } from "@react-google-maps/api";
+import React, { useState, useEffect } from "react";
+import {
+  MapPin,
+  Clock,
+  CheckCircle,
+  Navigation,
+  Play,
+  Phone,
+} from "lucide-react";
+import {
+  GoogleMap,
+  Marker,
+  DirectionsRenderer,
+  LoadScript,
+} from "@react-google-maps/api";
 
 export default function TaskQueue({ tasks = [], onStatusUpdate }) {
+  const [currentPosition, setCurrentPosition] = useState(null);
+
+  // Get worker's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCurrentPosition({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => {
+          console.warn("Geolocation permission denied.");
+        }
+      );
+    }
+  }, []);
+
   const getNextAction = (status) => {
     switch (status) {
       case "assigned":
@@ -21,23 +52,30 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
   };
 
   const handleActionClick = (taskId, nextStatus) => {
-    if (onStatusUpdate) {
-      onStatusUpdate(taskId, nextStatus);
-    }
+    if (onStatusUpdate) onStatusUpdate(taskId, nextStatus);
   };
 
   const handleNavigate = (task) => {
     if (task.lat && task.lng && task.lat !== 0 && task.lng !== 0) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${task.lat},${task.lng}`, "_blank");
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${task.lat},${task.lng}`,
+        "_blank"
+      );
     } else if (task.location && task.location !== "N/A") {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.location)}`, "_blank");
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          task.location
+        )}`,
+        "_blank"
+      );
     } else {
       alert("Location details are missing for this task.");
     }
   };
 
   const handleCallSupport = (number) => {
-    if (!number || number === "N/A") return alert("Support number not available!");
+    if (!number || number === "N/A")
+      return alert("Support number not available!");
     window.open(`tel:${number}`);
   };
 
@@ -53,6 +91,50 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
     }
   };
 
+  // Map component for each task
+  const TaskMap = ({ task }) => {
+    const [directions, setDirections] = useState(null);
+
+    useEffect(() => {
+      if (currentPosition && task.lat && task.lng && window.google) {
+        const directionsService = new window.google.maps.DirectionsService();
+        directionsService.route(
+          {
+            origin: currentPosition,
+            destination: { lat: task.lat, lng: task.lng },
+            travelMode: window.google.maps.TravelMode.DRIVING,
+          },
+          (result, status) => {
+            if (status === "OK") {
+              setDirections(result);
+            } else {
+              console.error("Error fetching directions", result);
+            }
+          }
+        );
+      }
+    }, [currentPosition, task.lat, task.lng]);
+
+    return (
+      <div className="h-64 w-full rounded overflow-hidden">
+        <LoadScript googleMapsApiKey="AIzaSyDGZueA0n4Z4juNWM5Eftox1MeKWyhvF60">
+          <GoogleMap
+            mapContainerStyle={{ width: "100%", height: "100%" }}
+            center={currentPosition || { lat: task.lat, lng: task.lng }}
+            zoom={14}
+            options={{ disableDefaultUI: false }}
+          >
+            {currentPosition && <Marker position={currentPosition} label="You" />}
+            {task.lat && task.lng && (
+              <Marker position={{ lat: task.lat, lng: task.lng }} />
+            )}
+            {directions && <DirectionsRenderer directions={directions} />}
+          </GoogleMap>
+        </LoadScript>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {tasks.length === 0 ? (
@@ -60,6 +142,8 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
       ) : (
         tasks.map((task) => {
           const nextAction = getNextAction(task.status);
+          const Icon = nextAction?.icon;
+
           return (
             <div key={task.id} className="bg-white shadow rounded overflow-hidden">
               <div className="flex justify-between items-start p-4 border-b">
@@ -98,7 +182,9 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">Estimated: {task.estimatedTime} min</span>
+                    <span className="text-sm">
+                      Estimated: {task.estimatedTime} min
+                    </span>
                   </div>
 
                   <div className="flex gap-2 mt-2">
@@ -117,31 +203,18 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
                   </div>
                 </div>
 
-                <div className="bg-gray-100 rounded-lg h-32 w-full">
-                  {task.lat && task.lng ? (
-                    <GoogleMap
-                      mapContainerStyle={{ width: "100%", height: "100%" }}
-                      center={{ lat: task.lat, lng: task.lng }}
-                      zoom={15}
-                      options={{ disableDefaultUI: true, zoomControl: true }}
-                    >
-                      <Marker position={{ lat: task.lat, lng: task.lng }} />
-                    </GoogleMap>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      No location data
-                    </div>
-                  )}
-                </div>
+                <TaskMap task={task} />
               </div>
 
               {nextAction && (
                 <div className="p-4 border-t flex justify-end">
                   <button
-                    onClick={() => handleActionClick(task.id, nextAction.nextStatus)}
+                    onClick={() =>
+                      handleActionClick(task.id, nextAction.nextStatus)
+                    }
                     className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
-                    <nextAction.icon className="h-4 w-4" />
+                    {Icon && <Icon className="h-4 w-4" />}
                     {nextAction.label}
                   </button>
                 </div>
