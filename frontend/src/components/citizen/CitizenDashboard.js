@@ -3,7 +3,11 @@ import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { ComplaintTracker } from "./complaint-tracker";
-import { ReportForm } from "./report-form"; 
+import {ReportForm } from  "./report-form";
+import Reward from "./rewards";
+
+
+
 
 const API_BASE_URL = "http://localhost:8001/api/reports";
 
@@ -163,21 +167,37 @@ export default function CitizenDashboard() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="mb-6">
-                {activeTab === 'track' ? (
-                    <Button onClick={() => setActiveTab("report")} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                        ➕ New Report
-                    </Button>
-                ) : (
-                    <Button variant="outline" onClick={() => setActiveTab("track")}>
-                        Back to Dashboard
-                    </Button>
-                )}
-            </div>
-            
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mb-6 flex justify-between w-full">
+    {activeTab !== 'track' && (
+        <Button 
+            variant="default" 
+            onClick={() => setActiveTab("track")} 
+            className="text-sm font-medium"
+        >
+            🏠 Home
+        </Button>
+    )}
+    {activeTab === 'track' && (
+        <div className="flex space-x-4">
+            <Button 
+                onClick={() => setActiveTab("report")} 
+                className="text-sm font-medium bg-emerald-500 hover:bg-emerald-600 text-white"
+            >
+                ➕ New Report
+            </Button>
+            <Button 
+                onClick={() => setActiveTab("rewards")} 
+                className="text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white"
+            >
+                🎁 Rewards
+            </Button>
+        </div>
+    )}
+</div>
+
             <div>
-                {activeTab === "track" ? (
+                {activeTab === "track" && (
                     <div className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <StatCard title="Total Reports" value={stats.total} icon="📝" />
@@ -215,13 +235,18 @@ export default function CitizenDashboard() {
                             </div>
                         </div>
                     </div>
-                ) : (
-                    <ReportForm 
-                        onSubmit={handleReportSubmit} 
-                        isSubmitting={isSubmitting} 
-                    />
-                )}
+                ) 
+                }
+                {activeTab === "report" && (
+    <ReportForm onSubmit={handleReportSubmit} onCancel={() => setActiveTab("track")} />
+  )}
+
+  {activeTab === "rewards" && (
+    <Reward />  // <-- import Reward from './Reward' at the top
+  )}
+    
             </div>
         </div>
     );
-}
+ }
+
