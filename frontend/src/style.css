@@ -28,13 +28,23 @@
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
 }
+html, body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 
 /* Apply base font styles to the body.
   The Inter font is imported from Google Fonts.
 */
 body {
+  margin: 0;
+  padding: 0;
   font-family: 'Inter', sans-serif;
+  background-color: hsl(var(--background));
 }
+
 
 /* Utility classes that map the CSS variables to Tailwind-like class names.
   This allows for consistent styling across the application.
