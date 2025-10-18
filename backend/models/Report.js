@@ -15,7 +15,6 @@ const ReportSchema = new mongoose.Schema({
   pincode: { type: String, required: true },
   state: { type: String, required: true },
 
-  // ✅ Updated GeoJSON location
   location: {
     type: {
       type: String,
@@ -46,8 +45,21 @@ const ReportSchema = new mongoose.Schema({
       updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     },
   ],
-  createdAt: { type: Date, default: Date.now },
   completedAt: Date,
+
+  // ======================================================
+  // ✅ ADD THIS SECTION
+  // This adds the fields to store feedback in the database
+  // It matches the logic in your routes/reports.js file
+  // ======================================================
+  feedback: {
+    serviceRating: { type: Number, min: 1, max: 5 },
+    workerRating: { type: Number, min: 0, max: 5 },
+    comments: { type: String, trim: true, maxlength: 500 },
+    submittedAt: { type: Date }
+  },
+  
+  createdAt: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model("Report", ReportSchema);
