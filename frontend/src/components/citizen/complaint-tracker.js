@@ -765,113 +765,113 @@ useEffect(() => {
             />
 
             {/* 🧑‍🔧 Assigned Worker (NEW DESIGN) */}
-            {isWorkerAssigned && (
-                <Card>
-                    <CardHeader className="pb-4">
-                        <CardTitle className="flex items-center gap-2 text-xl">
-                            <span className="text-2xl">⏰</span>
-                            Assigned Worker
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {/* --- Worker Info & Actions --- */}
-                        <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="w-12 h-12 border-2 border-white shadow-md">
-                                    <AvatarImage src={complaint.worker.avatar} alt={complaint.worker.name} />
-                                    <AvatarFallback>{complaint.worker.name?.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-bold text-lg">{complaint.worker.name}</p>
-                                    {(complaint.worker.rating || complaint.worker.completedTasks) && (
-                                        <p className="text-sm text-gray-600 flex items-center gap-1 flex-wrap">
-                                            {complaint.worker.rating && (
-                                                <span className="flex items-center gap-1">
-                                                    <span className="text-yellow-500">⭐</span>
-                                                    {complaint.worker.rating} Rating
-                                                </span>
-                                            )}
-                                            {complaint.worker.rating && complaint.worker.completedTasks && (
-                                                <span className="text-gray-300 mx-1">|</span>
-                                            )}
-                                            {complaint.worker.completedTasks && (
-                                                <span>{complaint.worker.completedTasks}+ Completed</span>
-                                            )}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                                <Button asChild variant="outline" size="sm" className="flex items-center gap-1.5">
-                                    <a href={`tel:${complaint.worker.contact}`}>
-                                        <span>📞</span>
-                                        Call
-                                    </a>
-                                </Button>
-                                <Button variant="outline" size="sm" className="flex items-center gap-1.5">
-                                    <span>💬</span>
-                                    Chat
-                                </Button>
-                            </div>
-                        </div>
+          {/* 🧑‍🔧 Assigned Worker (with dynamic live location) */}
+{isWorkerAssigned && (
+  <Card className="shadow-sm">
+    <CardHeader className="pb-3">
+      <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+        <span>🧑‍🔧</span>
+        Assigned Worker
+      </CardTitle>
+    </CardHeader>
 
-                        {/* --- Live Location Section --- */}
-                        <div className="mt-6">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-semibold text-md">Live Location</h3>
-                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 shadow-sm">
-                                    <span className="relative flex h-2 w-2 mr-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                    </span>
-                                    Live
-                                </Badge>
-                            </div>
+    <CardContent>
+      {/* --- Worker Header --- */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={complaint.worker.avatar} alt={complaint.worker.name} />
+            <AvatarFallback>
+              {complaint.worker.name?.charAt(0) || "W"}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-semibold text-gray-800">{complaint.worker.name}</p>
+          </div>
+        </div>
 
-                            <div className="relative h-32 rounded-lg bg-gradient-to-r from-blue-100 via-teal-50 to-green-100 p-4 flex items-center justify-between overflow-hidden border border-gray-200">
-                                <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-blue-300 transform -translate-y-1/2"></div>
-                                <div className="absolute left-1/3 top-1/2 transform -translate-x-1/2 -translate-y-full text-center">
-                                    <span className="text-4xl text-pink-500" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>📍</span>
-                                    <div className="p-1.5 px-2 bg-white/70 rounded-md backdrop-blur-sm shadow-md mt-1">
-                                        <p className="text-xs font-semibold text-gray-800 whitespace-nowrap">Worker Location</p>
-                                        {complaint.worker.location?.distance && (
-                                            <p className="text-xs text-gray-600 whitespace-nowrap">
-                                                {complaint.worker.location.distance} km from you
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="absolute right-1/4 top-1/2 transform -translate-y-1/2">
-                                    <span className="flex h-5 w-5 relative">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-5 w-5 bg-green-600 border-2 border-white shadow-lg"></span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1.5"
+            asChild
+          >
+            <a href={`tel:${complaint.worker.contact}`}>
+              📞 Call
+            </a>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1.5"
+          >
+            💬 Chat
+          </Button>
+        </div>
+      </div>
 
-                        {/* --- Location & ETA Details --- */}
-                        <div className="mt-4 space-y-2">
-                            {complaint.worker.location?.currentAddress && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xl">📍</span>
-                                    <span className="text-sm text-gray-700">
-                                        Currently at: <span className="font-medium text-gray-900">{complaint.worker.location.currentAddress}</span>
-                                    </span>
-                                </div>
-                            )}
-                            {complaint.worker.location?.eta && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xl">⏱️</span>
-                                    <span className="text-sm text-gray-700">
-                                        ETA to your location: <span className="font-medium text-gray-900">{complaint.worker.location.eta}</span>
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+      {/* --- Live Location --- */}
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-medium text-gray-700 text-sm">Live Location</h3>
+        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 flex items-center gap-1">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          Live
+        </Badge>
+      </div>
+
+      {/* --- Dynamic progress line --- */}
+      {(() => {
+        // Use worker’s live progress percentage (0–100%)
+        const progressPercent = complaint.worker.location?.progress ?? 40; // default 40%
+        const clampedProgress = Math.min(100, Math.max(0, progressPercent));
+
+        return (
+          <div className="relative h-20 rounded-lg bg-gradient-to-r from-blue-50 via-teal-50 to-green-50 border border-gray-200 flex items-center justify-between px-4 overflow-hidden">
+            {/* Background line */}
+            <div className="absolute top-1/2 left-4 right-4 h-[2px] bg-gray-300 -translate-y-1/2"></div>
+
+            {/* Progress fill */}
+            <div
+              className="absolute top-1/2 left-4 h-[2px] bg-gradient-to-r from-pink-400 to-green-400 rounded-full -translate-y-1/2 transition-all duration-700 ease-in-out"
+              style={{ width: `${clampedProgress}%` }}
+            ></div>
+
+            {/* Worker Location Marker */}
+            <div
+              className="absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 transition-all duration-700 ease-in-out"
+              style={{ left: `${clampedProgress}%` }}
+            >
+              <div className="text-pink-500 text-2xl text-center">📍</div>
+              <span className="text-xs text-gray-700 bg-white/80 rounded-md px-2 py-0.5 mt-1 shadow-sm block text-center">
+                Worker Location
+              </span>
+            </div>
+
+            {/* Destination Marker */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+              <div className="h-4 w-4 rounded-full bg-green-500 border-2 border-white shadow-lg"></div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* --- Additional info (optional) --- */}
+      <div className="mt-4 space-y-1 text-sm text-gray-700">
+        {complaint.worker.location?.currentAddress && (
+          <p>📍 <span className="font-medium">{complaint.worker.location.currentAddress}</span></p>
+        )}
+        {complaint.worker.location?.eta && (
+          <p>⏱️ ETA: <span className="font-medium">{complaint.worker.location.eta}</span></p>
+        )}
+      </div>
+    </CardContent>
+  </Card>
+)}
+
 
             {/* 🌟 Feedback Section (Visible when resolved) */}
             {complaint.status === "completed" && ( 
