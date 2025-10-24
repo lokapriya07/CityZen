@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 // --- Import the real components from their files ---
 import { CommunityEngagement } from "./CommunityEngagement";
-import { WasteHeatmap } from "./WasteHeatMap";
+import  WasteHeatmap from "./WasteHeatMap";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { TaskAssignmentHub } from "./TaskAssignmentHub";
 import { WorkerPerformance } from "./WorkerPerformance";
@@ -150,10 +150,7 @@ export default function AdminDashboard() {
         <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div><h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1></div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm">Export Data</Button>
-              <Button size="sm">New Alert</Button>
-            </div>
+            
           </div>
         </header>
         <main className="flex-1 overflow-auto p-6">

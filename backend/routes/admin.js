@@ -462,4 +462,35 @@ router.put( "/reports/:reportId/assign", [
     }
 });
 
+// @desc      Get all reports (for heatmap)
+// @route     GET /api/admin/reports/all
+router.get("/reports/all", async (req, res) => {
+    try {
+        const reports = await Report.find()
+            .select("address status location createdAt")
+            .lean();
+
+        if (!reports || reports.length === 0) {
+            return res.json({
+                success: true,
+                count: 0,
+                data: [],
+                message: "No reports found.",
+            });
+        }
+
+        res.json({
+            success: true,
+            count: reports.length,
+            data: reports,
+        });
+    } catch (error) {
+        console.error("Error fetching reports:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error while fetching reports",
+        });
+    }
+});
+
 module.exports = router;
