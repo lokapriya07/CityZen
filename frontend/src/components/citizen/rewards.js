@@ -121,10 +121,10 @@ const mockRedemptionHistory = [
 ]
 
 const categoryColors = {
-  transport: "bg-blue-100 text-blue-700 border-blue-200",
-  event: "bg-purple-100 text-purple-700 border-purple-200",
-  merchandise: "bg-green-100 text-green-700 border-green-200",
-  coupon: "bg-orange-100 text-orange-700 border-orange-200",
+  transport: "bg-gradient-to-r from-sky-400 to-blue-500 text-white",
+  event: "bg-gradient-to-r from-purple-400 to-pink-500 text-white",
+  merchandise: "bg-gradient-to-r from-green-400 to-emerald-500 text-white",
+  coupon: "bg-gradient-to-r from-amber-400 to-orange-500 text-white",
 }
 
 const categoryLabels = {
@@ -247,7 +247,7 @@ export default function RewardsStore() {
 
                   <CardContent className="p-5 space-y-4">
                     <div>
-                      <h3 className="font-bold text-gray-900 text-lg">{reward.name}</h3>
+                      <h3 className="font-bold text-white-900 text-lg">{reward.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{reward.description}</p>
                     </div>
 
@@ -365,3 +365,9 @@ export default function RewardsStore() {
     </div>
   )
 }
+
+
+
+
+
+

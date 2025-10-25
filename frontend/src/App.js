@@ -34,6 +34,7 @@
 
 // export default App;
 
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // --- Cleaned Up Imports (one for each component) ---
@@ -46,6 +47,7 @@ import SignupForm from './components/SignupForm';
 import AdminDashboard from "./components/admin/AdminDashboard";
 import WorkerDashboard from "./components/worker/WorkerDashboard";
 import CitizenDashboard from "./components/citizen/CitizenDashboard";
+import ReportForm from "./components/citizen/report-form";
 import { AuthProvider } from './components/context/AuthContext';
 
 function App() {
@@ -65,6 +67,7 @@ function App() {
               <Route path="/citizen" element={<CitizenDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/worker" element={<WorkerDashboard />} />
+              <Route path="/citizen/new-report" element={<ReportForm />} />
             </Routes>
           </main>
         </div>
