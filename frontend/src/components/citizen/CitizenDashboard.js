@@ -724,7 +724,7 @@ export default function CitizenDashboard() {
           <Button
             variant="outline"
             onClick={() => setActiveTab("track")}
-            className="ml-auto"
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md transition-all"
           >
             ⬅ Back to Dashboard
           </Button>

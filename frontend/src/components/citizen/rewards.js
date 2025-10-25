@@ -189,17 +189,25 @@ export default function RewardsStore() {
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200">
         <Button
-          variant={activeTab === "store" ? "default" : "ghost"}
           onClick={() => setActiveTab("store")}
+          className={`${activeTab === "store"
+              ? "bg-teal-500 hover:bg-teal-600 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
         >
           🏪 Rewards Store
         </Button>
+
         <Button
-          variant={activeTab === "history" ? "default" : "ghost"}
           onClick={() => setActiveTab("history")}
+          className={`${activeTab === "history"
+              ? "bg-teal-500 hover:bg-teal-600 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
         >
           📋 Redemption History
         </Button>
+
       </div>
 
       {activeTab === "store" ? (
@@ -207,19 +215,34 @@ export default function RewardsStore() {
           {/* Category Filter */}
           <div className="flex flex-wrap gap-2">
             <Button
-              variant={selectedCategory === null ? "default" : "outline"}
               onClick={() => setSelectedCategory(null)}
+              className={`${selectedCategory === null
+                ? "bg-teal-500 hover:bg-teal-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               All Rewards
             </Button>
             {Object.entries(categoryLabels).map(([key, label]) => (
               <Button
                 key={key}
-                variant={selectedCategory === key ? "default" : "outline"}
                 onClick={() => setSelectedCategory(key)}
+                className={`${selectedCategory === key
+                  ? key === "transport"
+                    ? "bg-blue-500 hover:bg-blue-600 text-white"
+                    : key === "event"
+                      ? "bg-purple-500 hover:bg-purple-600 text-white"
+                      : key === "merchandise"
+                        ? "bg-green-500 hover:bg-green-600 text-white"
+                        : key === "coupon"
+                          ? "bg-yellow-400 hover:bg-yellow-500 text-white"
+                          : "bg-gray-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
               >
                 {label}
               </Button>
+
             ))}
           </div>
 
@@ -232,9 +255,8 @@ export default function RewardsStore() {
               return (
                 <Card
                   key={reward.id}
-                  className={`overflow-hidden transition-all duration-300 hover:shadow-lg ${
-                    !canRedeem ? "opacity-75" : ""
-                  }`}
+                  className={`overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col h-full ${!canRedeem ? "opacity-75" : ""
+                    }`}
                 >
                   <CardHeader className={`pb-3 ${categoryColors[reward.category]}`}>
                     <div className="flex items-start justify-between">
@@ -245,37 +267,36 @@ export default function RewardsStore() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="p-5 space-y-4">
+                  <CardContent className="p-5 flex flex-col justify-between flex-1">
                     <div>
                       <h3 className="font-bold text-white-900 text-lg">{reward.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{reward.description}</p>
-                    </div>
 
-                    <div className="flex items-center justify-between py-3 border-t border-b border-gray-200">
-                      <div>
-                        <p className="text-xs text-gray-500 font-medium">Points Required</p>
-                        <p className="text-2xl font-bold text-emerald-600">{reward.pointsRequired}</p>
+                      <div className="flex items-center justify-between py-3 border-t border-b border-gray-200 mt-3">
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium">Points Required</p>
+                          <p className="text-2xl font-bold text-emerald-600">{reward.pointsRequired}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500 font-medium">Value</p>
+                          <p className="text-lg font-bold text-gray-900">{reward.value}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500 font-medium">Value</p>
-                        <p className="text-lg font-bold text-gray-900">{reward.value}</p>
-                      </div>
-                    </div>
 
-                    {reward.partner && (
-                      <p className="text-xs text-gray-500">
-                        <span className="font-medium">Partner:</span> {reward.partner}
-                      </p>
-                    )}
+                      {reward.partner && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          <span className="font-medium">Partner:</span> {reward.partner}
+                        </p>
+                      )}
+                    </div>
 
                     <Button
                       onClick={() => handleRedeem(reward)}
                       disabled={!canRedeem || isRedeeming}
-                      className={`w-full font-medium transition-all ${
-                        canRedeem
+                      className={`w-full font-medium transition-all mt-4 ${canRedeem
                           ? "bg-emerald-500 hover:bg-emerald-600 text-white"
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      }`}
+                        }`}
                     >
                       {isRedeeming ? (
                         <span className="flex items-center justify-center gap-2">
@@ -289,6 +310,7 @@ export default function RewardsStore() {
                     </Button>
                   </CardContent>
                 </Card>
+
               )
             })}
           </div>
@@ -336,13 +358,12 @@ export default function RewardsStore() {
                               ? "secondary"
                               : "outline"
                         }
-                        className={`mt-2 ${
-                          record.status === "completed"
+                        className={`mt-2 ${record.status === "completed"
                             ? "bg-emerald-100 text-emerald-700"
                             : record.status === "pending"
                               ? "bg-blue-100 text-blue-700"
                               : "bg-gray-100 text-gray-700"
-                        }`}
+                          }`}
                       >
                         {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
                       </Badge>
@@ -365,7 +386,6 @@ export default function RewardsStore() {
     </div>
   )
 }
-
 
 
 
