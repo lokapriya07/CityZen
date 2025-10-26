@@ -620,17 +620,17 @@ export default function CitizenDashboard() {
           timeline: report.timeline || [],
           worker: workerDataFromApi
             ? {
-                name: workerDataFromApi.name || "Not Assigned",
-                avatar: workerDataFromApi.avatarUrl || workerDataFromApi.avatar,
-                contact: workerDataFromApi.contact || workerDataFromApi.phone,
-                rating: workerDataFromApi.rating,
-                completedTasks: workerDataFromApi.completedTasks,
-                location: {
-                  currentAddress: workerDataFromApi.currentLocation?.address,
-                  distance: workerDataFromApi.currentLocation?.distance,
-                  eta: workerDataFromApi.currentLocation?.eta,
-                },
-              }
+              name: workerDataFromApi.name || "Not Assigned",
+              avatar: workerDataFromApi.avatarUrl || workerDataFromApi.avatar,
+              contact: workerDataFromApi.contact || workerDataFromApi.phone,
+              rating: workerDataFromApi.rating,
+              completedTasks: workerDataFromApi.completedTasks,
+              location: {
+                currentAddress: workerDataFromApi.currentLocation?.address,
+                distance: workerDataFromApi.currentLocation?.distance,
+                eta: workerDataFromApi.currentLocation?.eta,
+              },
+            }
             : { name: "Not Assigned" },
         };
       });
@@ -704,7 +704,7 @@ export default function CitizenDashboard() {
         {activeTab === "track" && (
           <div className="flex gap-3">
             <Button
-             // onClick={() => setActiveTab("report")}
+              // onClick={() => setActiveTab("report")}
               onClick={() => navigate("/citizen/new-report")}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
@@ -724,7 +724,7 @@ export default function CitizenDashboard() {
           <Button
             variant="outline"
             onClick={() => setActiveTab("track")}
-            className="ml-auto"
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md transition-all"
           >
             ⬅ Back to Dashboard
           </Button>
@@ -754,11 +754,10 @@ export default function CitizenDashboard() {
                   complaints.map((complaint) => (
                     <Card
                       key={complaint.id}
-                      className={`cursor-pointer transition-all hover:shadow-md ${
-                        selectedComplaint?.id === complaint.id
+                      className={`cursor-pointer transition-all hover:shadow-md ${selectedComplaint?.id === complaint.id
                           ? "ring-2 ring-emerald-500"
                           : "shadow-sm"
-                      }`}
+                        }`}
                       onClick={() => setSelectedComplaint(complaint)}
                     >
                       <CardContent className="p-4">
