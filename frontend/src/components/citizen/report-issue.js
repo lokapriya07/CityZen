@@ -98,31 +98,7 @@ export function ReportIssue({ complaint, onClose, onSubmit }) {
             </select>
           </div>
 
-          {/* Priority */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Priority
-            </label>
-            <div className="flex space-x-2">
-              {[
-                { value: "low", label: "Low", color: "bg-green-100 text-green-800" },
-                { value: "medium", label: "Medium", color: "bg-yellow-100 text-yellow-800" },
-                { value: "high", label: "High", color: "bg-red-100 text-red-800" }
-              ].map((priorityOption) => (
-                <button
-                  key={priorityOption.value}
-                  onClick={() => setPriority(priorityOption.value)}
-                  className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
-                    priority === priorityOption.value
-                      ? `${priorityOption.color} border-current`
-                      : "bg-gray-100 text-gray-600 border-gray-300"
-                  }`}
-                >
-                  {priorityOption.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          
 
           {/* Description */}
           <div>
