@@ -305,4 +305,3 @@ export function ReportForm({ onSubmit, isSubmitting }) {
     );
 }
 export default ReportForm;
-
