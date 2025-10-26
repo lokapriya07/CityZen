@@ -2,7 +2,7 @@
 // SignupForm.js
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Form, useNavigate } from "react-router-dom";
 
 export default function SignupForm() {
   const [email, setEmail] = useState("");
@@ -107,6 +107,7 @@ export default function SignupForm() {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
@@ -164,7 +165,6 @@ export default function SignupForm() {
               required
             />
           </div>
-
           <div>
             <label>Account Type</label>
             <select
@@ -177,7 +177,6 @@ export default function SignupForm() {
               <option value="admin">Administrator - Manage operations</option>
             </select>
           </div>
-
           {/* NEW: Conditionally render phone input for workers */}
           {isWorker && (
             <div>
@@ -201,7 +200,7 @@ export default function SignupForm() {
                 <p className="text-red-500">
                   ❌ {locationError || "Waiting for location permission..."}
                 </p>
-              )}
+              )} 
             </div>
           )}
 
