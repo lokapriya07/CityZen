@@ -3,6 +3,7 @@ import { Users, Target, Sprout } from 'lucide-react';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 
+
 const features = [
   {
     icon: Users,
@@ -81,3 +82,4 @@ export default function AboutSection() {
     </section>
   );
 }
+
