@@ -33,9 +33,7 @@ import AboutSection from './Home/AboutSection';
 import HowItWorksSection from './Home/HowItWorksSection';
 import LiveDashboard from './Home/LiveDashboard';
 import ServicesSection from './Home/ServiceSection';
-import CommunityImpact from './Home/CommunityImpact';
 import TestimonialsSection from './Home/TestimonialsSection';
-import CallToAction from './Home/CallToAction';
 import Footer from './Home/Footer';
 import ScrollToTop from './Home/ScrollToTop';
 
@@ -47,10 +45,10 @@ function App() {
       <HowItWorksSection />
       <LiveDashboard />
       <ServicesSection />
-      <CommunityImpact />
       <TestimonialsSection />
-      <CallToAction />
-      <Footer />
+      <div className="bg-transparent m-0 p-0 w-screen overflow-hidden">
+        <Footer />
+      </div>
       <ScrollToTop />
     </div>
   );
