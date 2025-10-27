@@ -10,6 +10,7 @@ require("dotenv").config();
 const app = express();
 const PORT = 8001;
 
+
 // Basic env check
 if (!process.env.JWT_SECRET) {
   console.error("❌ process.env.JWT_SECRET is not defined. Set JWT_SECRET and restart.");
