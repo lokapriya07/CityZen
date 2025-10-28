@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './UploadImage.css';
+import { useNavigate } from 'react-router-dom';
+
 
 // SVG Icons (code unchanged)
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>;
@@ -11,6 +13,7 @@ const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewB
 const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>;
 
 export function ReportForm({ onSubmit, isSubmitting }) {
+    const navigate = useNavigate();
     const initialFormData = {
         fullName: '', email: '', phone: '', altPhone: '', address: '', city: '',
         pincode: '', state: '', gpsLocation: false, gpsCoordinates: '',
@@ -97,7 +100,7 @@ export function ReportForm({ onSubmit, isSubmitting }) {
             setLocationStatus('');
         }
     };
-    
+
     const resetFileInput = (message) => {
         if (fileInputRef.current) { fileInputRef.current.value = ""; }
         setFormData(prev => ({ ...prev, photos: null }));
@@ -106,7 +109,7 @@ export function ReportForm({ onSubmit, isSubmitting }) {
         setClassificationResult(message || "");
         setImagePreview('');
     };
-    
+
     const handleFileChangeAndValidation = async (event) => {
         const files = event.target.files;
         if (!files || files.length === 0) {
@@ -159,7 +162,7 @@ export function ReportForm({ onSubmit, isSubmitting }) {
         }
     };
 
-    
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -193,6 +196,8 @@ export function ReportForm({ onSubmit, isSubmitting }) {
             setFormData(initialFormData);
             setProgress(0);
             resetFileInput();
+            navigate("/citizen");
+
 
         } catch (err) {
             console.error(err);
@@ -201,10 +206,21 @@ export function ReportForm({ onSubmit, isSubmitting }) {
     };
 
 
-    const indianStates = [ "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi" ];
+    const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi"];
 
     return (
-        <div className="container">
+        <div className="container mx-auto px-6 py-8">
+            {/* Back to Dashboard Button */}
+            <div className="flex justify-end mb-4">
+                <button
+                    onClick={() => navigate("/citizen")}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md transition-all"
+                >
+                    ⬅ Back to Dashboard
+                </button>
+
+            </div>
+
             <div className="header">
                 <h1>Report Waste Spot</h1>
                 <p>Help us keep our community clean by reporting improper waste disposal</p>
@@ -244,7 +260,7 @@ export function ReportForm({ onSubmit, isSubmitting }) {
                         <div className="form-grid">
                             <div className="form-group"><label htmlFor="wasteType" className="required">Type of Waste</label><select id="wasteType" name="wasteType" value={formData.wasteType} onChange={handleChange} required><option value="">Select Waste Type</option><option value="household">Household Waste</option><option value="construction">Construction Debris</option><option value="electronic">Electronic Waste</option><option value="medical">Medical Waste</option><option value="plastic">Plastic Waste</option><option value="organic">Organic/Food Waste</option><option value="chemical">Chemical/Hazardous Waste</option><option value="mixed">Mixed Waste</option><option value="other">Other</option></select></div>
                             <div className="form-group"><label htmlFor="wasteAmount" className="required">Estimated Amount</label><select id="wasteAmount" name="wasteAmount" value={formData.wasteAmount} onChange={handleChange} required><option value="">Select Amount</option><option value="small">Small (Few bags/items)</option><option value="medium">Medium (Cart load)</option><option value="large">Large (Truck load)</option><option value="massive">Massive (Multiple trucks)</option></select></div>
-                            
+
                             {/* The 'required' attribute and class have been removed from the description */}
                             <div className="form-group full-width">
                                 <label htmlFor="description">Detailed Description (Optional)</label>
@@ -299,3 +315,4 @@ export function ReportForm({ onSubmit, isSubmitting }) {
         </div>
     );
 }
+export default ReportForm;

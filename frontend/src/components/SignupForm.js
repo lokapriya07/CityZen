@@ -1,28 +1,28 @@
+
 // SignupForm.js
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Form, useNavigate } from "react-router-dom";
 
 export default function SignupForm() {
-  // --- State variables for form inputs and UI feedback ---
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState("user");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // For showing a loading state on the button
+  const [loading, setLoading] = useState(false);
+  
+  // NEW: State for phone number
+  const [phone, setPhone] = useState("");
 
-  // 🚨 NEW LOCATION-RELATED STATE 🚨
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState("");
-  const [isWorker, setIsWorker] = useState(false); // New state to track if the role is a worker
+  const [isWorker, setIsWorker] = useState(false);
 
   const navigate = useNavigate();
 
-  // 🚨 NEW useEffect hook to get location on component mount
   useEffect(() => {
-    // Only attempt to get location if the role is 'worker' or 'admin'
     if (role === 'worker' || role === 'admin') {
       setIsWorker(true);
       if (navigator.geolocation) {
@@ -37,7 +37,7 @@ export default function SignupForm() {
           (err) => {
             console.error(err);
             setLocationError("Location access denied or timed out.");
-            setLocation(null); // Clear location if there's an error
+            setLocation(null);
           },
           { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
         );
@@ -49,14 +49,12 @@ export default function SignupForm() {
       setLocation(null);
       setLocationError("");
     }
-  }, [role]); // Rerun this effect when the role changes
+  }, [role]);
 
-  // --- Handles form submission ---
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent the browser from reloading the page
-    setError(""); // Clear any previous errors
+    e.preventDefault();
+    setError("");
 
-    // --- 1. Frontend Validation ---
     if (!email || !password || !name || !confirmPassword) {
       return setError("Please fill in all fields");
     }
@@ -66,19 +64,25 @@ export default function SignupForm() {
     if (password.length < 6) {
       return setError("Password must be at least 6 characters");
     }
+    // NEW: Validation for phone number if the role is worker
+    if (role === 'worker' && !phone) {
+      return setError("Please enter a phone number for worker accounts");
+    }
 
-    setLoading(true); // Disable the button and show a loading message
+    setLoading(true);
 
-    // --- Prepare the request body
     const requestBody = { name, email, password, role };
-    // 🚨 NEW LOGIC: Only add location if it was successfully detected AND the role is 'worker' or 'admin'
+    
+    // NEW: Add phone number to request body if role is worker
+    if (role === 'worker' && phone) {
+        requestBody.phone = phone;
+    }
+    
     if (location && (role === 'worker' || role === 'admin')) {
       requestBody.latitude = location.latitude;
       requestBody.longitude = location.longitude;
     }
 
-
-    // --- 2. API Call to the Backend ---
     try {
       const response = await fetch('http://localhost:8001/api/auth/signup', {
         method: 'POST',
@@ -94,7 +98,6 @@ export default function SignupForm() {
         throw new Error(data.msg || 'Registration failed.');
       }
 
-      // --- 3. Handle Success ---
       alert('Registration successful! Please log in.');
       navigate("/login");
 
@@ -104,6 +107,7 @@ export default function SignupForm() {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
@@ -161,7 +165,6 @@ export default function SignupForm() {
               required
             />
           </div>
-
           <div>
             <label>Account Type</label>
             <select
@@ -174,6 +177,20 @@ export default function SignupForm() {
               <option value="admin">Administrator - Manage operations</option>
             </select>
           </div>
+          {/* NEW: Conditionally render phone input for workers */}
+          {isWorker && (
+            <div>
+              <label>Phone Number</label>
+              <input
+                className="w-full border rounded p-2"
+                type="tel"
+                placeholder="Enter your 10-digit phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required={role === 'worker'} // Make it required only for workers
+              />
+            </div>
+          )}
 
           {isWorker && (
             <div className="text-sm">
@@ -183,7 +200,7 @@ export default function SignupForm() {
                 <p className="text-red-500">
                   ❌ {locationError || "Waiting for location permission..."}
                 </p>
-              )}
+              )} 
             </div>
           )}
 
@@ -191,7 +208,7 @@ export default function SignupForm() {
 
           <button
             type="submit"
-            disabled={loading} // Button is disabled while loading
+            disabled={loading}
             className="w-full bg-green-700 text-white py-2 rounded hover:bg-green-800 disabled:bg-gray-400"
           >
             {loading ? 'Creating Account...' : 'Create Account'}
