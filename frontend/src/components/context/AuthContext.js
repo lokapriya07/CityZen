@@ -96,21 +96,14 @@ export const AuthProvider = ({ children }) => {
     setToken(token);
   };
 
-  // const logout = () => {
-  //   // Remove both user and token on logout
-  //   localStorage.removeItem('user');
-  //   localStorage.removeItem('token');
-  //   setUser(null);
-  //   setToken(null);
-  // };
-
   const logout = () => {
-  localStorage.removeItem('user');
-  localStorage.removeItem('token');
-  setUser(null);
-  setToken(null);
-  window.location.reload();
-};
+    // Remove both user and token on logout
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    setUser(null);
+    setToken(null);
+  };
+
 
   const value = {
     user,

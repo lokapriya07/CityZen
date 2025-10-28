@@ -4,6 +4,25 @@
   text-align: center;
 }
 
+/* Prevent any horizontal overflow globally */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+
+
+
+
+/* Optional: ensure all sections don't exceed width */
+* {
+  box-sizing: border-box;
+  max-width: 100vw;
+}
+
 
 /* Navigation specific styles */
 .navbar {
