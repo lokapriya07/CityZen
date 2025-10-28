@@ -15,7 +15,7 @@
 }
 
 main, body {
-  padding-top: 80px; /* Adjust based on navbar height */
+  padding-top:50px; /* Adjust based on navbar height */
 }
 
 /* Base body styles should ideally be in a global CSS file like index.css, 
