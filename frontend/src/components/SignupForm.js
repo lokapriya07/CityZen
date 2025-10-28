@@ -173,7 +173,7 @@ export default function SignupForm() {
               onChange={(e) => setRole(e.target.value)}
             >
               <option value="user">Citizen - Report waste issues</option>
-              <option value="worker">Waste Worker - Handle cleanup tasks</option>
+              <option value="worker">Worker - Handle cleanup tasks</option>
               <option value="admin">Administrator - Manage operations</option>
             </select>
           </div>

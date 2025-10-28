@@ -265,7 +265,7 @@ export function WorkerPerformance() {
   }
 
   return (
-    <div className="space-y-8 bg-gradient-to-b from-blue-50 via-white to-indigo-50 p-8 rounded-xl shadow-inner min-h-screen text-gray-800">
+    <div className="space-y-8 bg-gradient-to-b  via-white to-indigo-50 p-8 rounded-xl shadow-inner min-h-screen text-gray-800">
       {/* HEADER */}
       <div className="text-center">
         <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500">

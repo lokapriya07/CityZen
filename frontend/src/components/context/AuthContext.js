@@ -62,6 +62,7 @@
 
 //   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 // };
+
 import { createContext, useState, useContext } from 'react';
 
 const AuthContext = createContext();
@@ -95,13 +96,21 @@ export const AuthProvider = ({ children }) => {
     setToken(token);
   };
 
+  // const logout = () => {
+  //   // Remove both user and token on logout
+  //   localStorage.removeItem('user');
+  //   localStorage.removeItem('token');
+  //   setUser(null);
+  //   setToken(null);
+  // };
+
   const logout = () => {
-    // Remove both user and token on logout
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    setUser(null);
-    setToken(null);
-  };
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
+  setUser(null);
+  setToken(null);
+  window.location.reload();
+};
 
   const value = {
     user,
