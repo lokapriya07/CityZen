@@ -1,17 +1,12 @@
+// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}", // This line scans all your components
   ],
   theme: {
-    extend: {
-      colors: {
-        background: "hsl(0, 0%, 100%)",
-        border: "hsl(220, 13%, 91%)",
-        ring: "hsl(210, 100%, 50%)",
-        "card-bg": "hsl(0, 0%, 98%)", // Add this line
-      },
-    },
+    extend: {},
   },
   plugins: [],
 }

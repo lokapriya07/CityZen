@@ -1,25 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  MapPin,
-  Clock,
-  CheckCircle,
-  Navigation,
-  Play,
-  Phone,
-} from "lucide-react";
-import {
-  GoogleMap,
-  Marker,
-  DirectionsRenderer,
-  LoadScript,
-} from "@react-google-maps/api";
+import { MapPin, Clock, CheckCircle, Navigation, Play, Phone } from "lucide-react";
+import { GoogleMap, Marker, DirectionsRenderer, LoadScript } from "@react-google-maps/api";
 
 export default function TaskQueue({ tasks = [], onStatusUpdate }) {
   const [currentPosition, setCurrentPosition] = useState(null);
 
-  // Get worker's current location
+  // 📍 Get worker's current location once
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -36,6 +24,7 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
     }
   }, []);
 
+  // 🔁 Get next action for each task status
   const getNextAction = (status) => {
     switch (status) {
       case "assigned":
@@ -55,6 +44,7 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
     if (onStatusUpdate) onStatusUpdate(taskId, nextStatus);
   };
 
+  // 🧭 Open Google Maps navigation
   const handleNavigate = (task) => {
     if (task.lat && task.lng && task.lat !== 0 && task.lng !== 0) {
       window.open(
@@ -63,9 +53,7 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
       );
     } else if (task.location && task.location !== "N/A") {
       window.open(
-        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-          task.location
-        )}`,
+        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.location)}`,
         "_blank"
       );
     } else {
@@ -73,12 +61,13 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
     }
   };
 
+  // 📞 Call support number
   const handleCallSupport = (number) => {
-    if (!number || number === "N/A")
-      return alert("Support number not available!");
+    if (!number || number === "N/A") return alert("Support number not available!");
     window.open(`tel:${number}`);
   };
 
+  // 🎨 Priority label colors
   const getPriorityStyles = (priority) => {
     switch (priority) {
       case "high":
@@ -91,7 +80,7 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
     }
   };
 
-  // Map component for each task
+  // 🗺️ Map component
   const TaskMap = ({ task }) => {
     const [directions, setDirections] = useState(null);
 
@@ -115,19 +104,21 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
       }
     }, [currentPosition, task.lat, task.lng]);
 
+    const mapCenter = currentPosition || (task.lat && task.lng ? { lat: task.lat, lng: task.lng } : null);
+
+    if (!mapCenter) return <div className="h-64 w-full bg-gray-100 flex items-center justify-center text-gray-500">Location not available</div>;
+
     return (
       <div className="h-64 w-full rounded overflow-hidden">
-        <LoadScript googleMapsApiKey="AIzaSyDGZueA0n4Z4juNWM5Eftox1MeKWyhvF60">
+        <LoadScript googleMapsApiKey="AIzaSyAyl3YpasKmlq-QnQA_lVbvfrnW7VLNwDY">
           <GoogleMap
             mapContainerStyle={{ width: "100%", height: "100%" }}
-            center={currentPosition || { lat: task.lat, lng: task.lng }}
+            center={mapCenter}
             zoom={14}
             options={{ disableDefaultUI: false }}
           >
             {currentPosition && <Marker position={currentPosition} label="You" />}
-            {task.lat && task.lng && (
-              <Marker position={{ lat: task.lat, lng: task.lng }} />
-            )}
+            {task.lat && task.lng && <Marker position={{ lat: task.lat, lng: task.lng }} />}
             {directions && <DirectionsRenderer directions={directions} />}
           </GoogleMap>
         </LoadScript>
@@ -146,15 +137,12 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
 
           return (
             <div key={task.id} className="bg-white shadow rounded overflow-hidden">
+              {/* Header */}
               <div className="flex justify-between items-start p-4 border-b">
                 <div>
                   <div className="text-lg font-semibold">{task.displayId}</div>
                   <div className="flex gap-2 mt-1">
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-bold ${getPriorityStyles(
-                        task.priority
-                      )}`}
-                    >
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${getPriorityStyles(task.priority)}`}>
                       {task.priority ? task.priority.toUpperCase() : "N/A"}
                     </span>
                     <span className="px-2 py-0.5 rounded text-xs border text-gray-600">
@@ -168,6 +156,7 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
                 </div>
               </div>
 
+              {/* Task Details + Map */}
               <div className="p-4 space-y-4 grid md:grid-cols-2 gap-4 items-center">
                 <div className="space-y-2">
                   <div className="font-bold text-gray-800">{task.title}</div>
@@ -175,16 +164,12 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
                     <MapPin className="h-4 w-4 mt-0.5 text-gray-500" />
                     <div>
                       <div className="font-medium text-sm">{task.location}</div>
-                      <div className="text-xs text-gray-500">
-                        Waste Type: {task.wasteType}
-                      </div>
+                      <div className="text-xs text-gray-500">Waste Type: {task.wasteType}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">
-                      Estimated: {task.estimatedTime} min
-                    </span>
+                    <span className="text-sm">Estimated: {task.estimatedTime} min</span>
                   </div>
 
                   <div className="flex gap-2 mt-2">
@@ -206,12 +191,11 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
                 <TaskMap task={task} />
               </div>
 
+              {/* Footer Action */}
               {nextAction && (
                 <div className="p-4 border-t flex justify-end">
                   <button
-                    onClick={() =>
-                      handleActionClick(task.id, nextAction.nextStatus)
-                    }
+                    onClick={() => handleActionClick(task.id, nextAction.nextStatus)}
                     className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
                     {Icon && <Icon className="h-4 w-4" />}
