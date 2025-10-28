@@ -82,6 +82,7 @@ export function ResourceHub() {
   return (
     <div className="space-y-4 mt-4">
       {/* Safety Instructions */}
+      
       <div>
         <SectionHeader icon={Shield} title="Safety" sectionKey="safety" />
         {openSections.includes("safety") && (
