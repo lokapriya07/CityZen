@@ -57,6 +57,36 @@
 // export default App;
 
 
+// import HeroSection from './Home/HeroSection';
+// import AboutSection from './Home/AboutSection';
+// import HowItWorksSection from './Home/HowItWorksSection';
+// import LiveDashboard from './Home/LiveDashboard';
+// import ServicesSection from './Home/ServiceSection';
+// import TestimonialsSection from './Home/TestimonialsSection';
+// import Footer from './Home/Footer';
+// import ScrollToTop from './Home/ScrollToTop';
+
+// function HomePage() {
+//   return (
+//     // <div className="min-h-screen w-full overflow-x-hidden bg-white">
+//     <div className="min-h-screen w-full overflow-x-hidden">
+//       {/* ✅ No horizontal scroll + clean stacking */}
+//       <HeroSection />
+//       <AboutSection />
+//       <HowItWorksSection />
+//       <LiveDashboard />
+//       <ServicesSection />
+//       <TestimonialsSection />
+//       <Footer />
+//       <ScrollToTop />
+//     </div>
+//   );
+// }
+
+// export default HomePage;
+
+
+
 import HeroSection from './Home/HeroSection';
 import AboutSection from './Home/AboutSection';
 import HowItWorksSection from './Home/HowItWorksSection';
@@ -68,19 +98,27 @@ import ScrollToTop from './Home/ScrollToTop';
 
 function HomePage() {
   return (
-    // <div className="min-h-screen w-full overflow-x-hidden bg-white">
     <div className="min-h-screen w-full overflow-x-hidden">
-      {/* ✅ No horizontal scroll + clean stacking */}
       <HeroSection />
-      <AboutSection />
+      <section id="about">
+        <AboutSection />
+      </section>
       <HowItWorksSection />
       <LiveDashboard />
-      <ServicesSection />
-      <TestimonialsSection />
-      <Footer />
+      <section id="services">
+        <ServicesSection />
+      </section>
+      <section id="community">
+        <TestimonialsSection />
+      </section>
+      <section id="contact">
+        <Footer />
+      </section>
       <ScrollToTop />
     </div>
   );
 }
 
 export default HomePage;
+
+
