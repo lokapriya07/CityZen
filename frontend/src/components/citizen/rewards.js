@@ -187,7 +187,7 @@ export default function RewardsStore() {
       </Card>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
+      {/* <div className="flex gap-2 border-b border-gray-200">
         <Button
           onClick={() => setActiveTab("store")}
           className={`${activeTab === "store"
@@ -208,7 +208,30 @@ export default function RewardsStore() {
           📋 Redemption History
         </Button>
 
+      </div> */}
+      {/* Tabs */}
+      <div className="flex flex-wrap justify-center sm:justify-start gap-2 border-b border-gray-200 p-2">
+        <Button
+          onClick={() => setActiveTab("store")}
+          className={`flex-shrink-0 text-sm sm:text-base ${activeTab === "store"
+              ? "bg-teal-500 hover:bg-teal-600 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+        >
+          🏪 Rewards Store
+        </Button>
+
+        <Button
+          onClick={() => setActiveTab("history")}
+          className={`flex-shrink-0 text-sm sm:text-base ${activeTab === "history"
+              ? "bg-teal-500 hover:bg-teal-600 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+        >
+          📋 Redemption History
+        </Button>
       </div>
+
 
       {activeTab === "store" ? (
         <div className="space-y-6">
