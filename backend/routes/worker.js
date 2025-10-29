@@ -52,16 +52,18 @@ router.put(
 // ✅ Get worker location
 router.get("/:name/location", async (req, res) => {
   try {
-    // Find by name instead of ID
+    // 💡 UPDATED: Select the address field as well
     const worker = await User.findOne({ name: req.params.name }).select("name workerDetails.currentLocation");
     if (!worker) return res.status(404).json({ success: false, message: "Worker not found." });
 
-    const { latitude, longitude, timestamp } = worker.workerDetails.currentLocation || {};
+    // 💡 UPDATED: Destructure address along with coordinates
+    const { latitude, longitude, timestamp, address } = worker.workerDetails.currentLocation || {};
 
     return res.json({
       success: true,
       worker: worker.name,
-      location: latitude && longitude ? { latitude, longitude, timestamp } : null,
+      // 💡 UPDATED: Include address in the response
+      location: latitude && longitude ? { latitude, longitude, timestamp, address } : null,
     });
   } catch (error) {
     console.error("Error fetching worker location:", error);

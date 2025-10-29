@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 // --- UI Components ---
 
@@ -49,14 +49,19 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-const WorkerLocation = ({ lat, lon }) => {
-    const [address, setAddress] = useState("Loading address...");
+const WorkerLocation = ({ lat, lon, storedAddress }) => {
+    const [address, setAddress] = useState(storedAddress || "Loading address...");
 
     useEffect(() => {
-        if (typeof lat !== 'number' || typeof lon !== 'number') { // Check for numbers
-            setAddress("No location data");
+        if (storedAddress && storedAddress !== "Loading address...") {
             return;
         }
+
+        if (typeof lat !== 'number' || typeof lon !== 'number' || (lat === 0 && lon === 0)) {
+            setAddress("No precise location data");
+            return;
+        }
+
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
             .then(res => res.json())
             .then(data => {
@@ -80,7 +85,7 @@ const WorkerLocation = ({ lat, lon }) => {
                 }
             })
             .catch(() => setAddress("Error fetching address"));
-    }, [lat, lon]);
+    }, [lat, lon, storedAddress]);
 
     return (
         <div className="flex items-start text-sm text-gray-600">
@@ -106,7 +111,11 @@ const WorkerCard = ({ worker }) => {
                     <span className="w-5 text-center">⭐</span>
                     <span>Rating: {rating} / 5.0</span>
                 </div>
-                <WorkerLocation lat={location?.latitude} lon={location?.longitude} />
+                <WorkerLocation
+                    lat={location?.latitude || 0}
+                    lon={location?.longitude || 0}
+                    storedAddress={location?.address || ''}
+                />
                 <div className="flex items-center text-sm text-gray-500">
                     <span className="w-5 text-center">✅</span>
                     <span>Tasks Completed: {worker.stats?.completedTasks || 0}</span>
@@ -137,11 +146,14 @@ const AllReportCard = ({ report }) => {
     );
 };
 
-const UnassignedReportCard = ({ report, bestMatch, onAssign, onManualAssign, isAssigning }) => {
 
+const UnassignedReportCard = ({ report, bestMatch, onAssign, onManualAssign, isAssigning, isGeocoding }) => {
     const handleManualClick = () => {
         onManualAssign(report);
     };
+
+    const bestWorkerDistance = bestMatch?.distance;
+    const isLoading = isAssigning || isGeocoding;
 
     return (
         <Card>
@@ -151,15 +163,20 @@ const UnassignedReportCard = ({ report, bestMatch, onAssign, onManualAssign, isA
                 <p className="text-sm text-gray-400">{new Date(report.createdAt).toLocaleString()}</p>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-100">
-                {isAssigning && (<p className="text-gray-500">Assigning...</p>)}
+                {isLoading && (<p className="text-blue-500">
+                    {isGeocoding ? '🗺️ Finding coordinates from address...' : 'Assigning...'}
+                </p>)}
 
-                {report.justAssignedTo && (
+                {!isLoading && report.justAssignedTo && (
                     <p className="text-green-600 font-medium">✅ Successfully assigned to **{report.justAssignedTo}**!</p>
                 )}
 
-                {!isAssigning && !report.justAssignedTo && bestMatch && (
+                {!isLoading && !report.justAssignedTo && bestMatch && (
                     <div className="flex justify-between items-center">
-                        <p className="text-sm text-gray-700">✅ **Best Match:** {bestMatch.name}</p>
+                        <p className="text-sm text-gray-700">
+                            ✅ **Best Match:** {bestMatch.name}
+                            <span className="font-semibold text-blue-600 ml-2">({bestWorkerDistance} km)</span>
+                        </p>
                         <button
                             onClick={() => onAssign(report._id, bestMatch._id, bestMatch.name)}
                             className="px-3 py-1 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
@@ -169,14 +186,14 @@ const UnassignedReportCard = ({ report, bestMatch, onAssign, onManualAssign, isA
                     </div>
                 )}
 
-                {!isAssigning && !report.justAssignedTo && !bestMatch && (
+                {!isLoading && !report.justAssignedTo && !bestMatch && (
                     <div className="flex justify-between items-center">
-                        <p className="text-sm text-orange-500">⚠️ No nearby workers available.</p>
+                        <p className="text-sm text-orange-500">⚠️ No nearby workers available (or no valid addresses).</p>
                         <button
                             onClick={handleManualClick}
                             className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
                         >
-                            Assign
+                            Assign Manually
                         </button>
                     </div>
                 )}
@@ -196,34 +213,36 @@ const AssignManuallyModal = ({ report, workersWithDistance, onClose, onAssign })
                 <div className="max-h-64 overflow-y-auto space-y-2">
                     {workersWithDistance
                         .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
-                        .map(worker => (
-                            <div
-                                key={worker._id}
-                                // Disable clicking if distance is null
-                                onClick={worker.distance !== null ? () => onAssign(report._id, worker._id, worker.name) : undefined}
-                                className={`flex justify-between items-center p-3 border rounded-lg ${worker.distance !== null ? 'hover:bg-gray-100 cursor-pointer' : 'opacity-60 cursor-not-allowed'
-                                    }`}
-                                title={worker.distance === null ? "Cannot assign: Location data missing" : `Assign to ${worker.name}`}
-                            >
-                                <div>
-                                    <span className="font-medium">{worker.name}</span>
-                                    <span className="text-sm text-gray-500 ml-2">({worker.email})</span>
-                                    <p className={`text-sm ${worker.distance !== null ? 'text-blue-600 font-medium' : 'text-red-500'}`}>
-                                        {worker.distance !== null
-                                            ? `Approx. ${worker.distance.toFixed(1)} km away`
-                                            // More specific error messages
-                                            : (!report.location?.coordinates
-                                                ? "Report has no location data"
-                                                : (!worker.workerDetails?.currentLocation?.latitude || !worker.workerDetails?.currentLocation?.longitude)
-                                                    ? "Worker has no location data"
-                                                    : "Distance calculation error"
-                                            )
-                                        }
-                                    </p>
+                        .map(worker => {
+                            const canAssign = worker.distance !== null && worker.isActive;
+
+                            let reason = "";
+                            if (!worker.isActive) reason = "Cannot assign: Worker is offline";
+                            else if (worker.distance === null) reason = "Cannot assign: Distance unavailable (Haversine fallback)";
+
+
+                            return (
+                                <div
+                                    key={worker._id}
+                                    onClick={canAssign ? () => onAssign(report._id, worker._id, worker.name) : undefined}
+                                    className={`flex justify-between items-center p-3 border rounded-lg ${canAssign ? 'hover:bg-gray-100 cursor-pointer' : 'opacity-60 cursor-not-allowed'
+                                        }`}
+                                    title={canAssign ? `Assign to ${worker.name}` : reason}
+                                >
+                                    <div>
+                                        <span className="font-medium">{worker.name}</span>
+                                        <span className="text-sm text-gray-500 ml-2">({worker.email})</span>
+                                        <p className={`text-sm ${worker.distance !== null ? 'text-blue-600 font-medium' : 'text-red-500'}`}>
+                                            {worker.distance !== null
+                                                ? `Approx. ${worker.distance.toFixed(1)} km (Straight-line)`
+                                                : "Distance unavailable"
+                                            }
+                                        </p>
+                                    </div>
+                                    <AvailabilityBadge isActive={worker.isActive} />
                                 </div>
-                                <AvailabilityBadge isActive={worker.isActive} />
-                            </div>
-                        ))}
+                            );
+                        })}
                 </div>
 
                 <div className="mt-6 text-right">
@@ -253,24 +272,10 @@ export default function TaskAssignmentHub() {
 
     const getToken = () => localStorage.getItem('adminToken');
 
-    // --- Helper Functions ---
-
-    /**
-     * Calculates the Haversine distance between two points on the earth.
-     * @param {number} lat1 Latitude of point 1
-     * @param {number} lon1 Longitude of point 1
-     * @param {number} lat2 Latitude of point 2
-     * @param {number} lon2 Longitude of point 2
-     * @returns {number|null} Distance in km or null if coordinates are invalid
-     */
+    // Client-side Haversine (straight-line) for modal proximity fallback
     const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
-        if (
-            typeof lat1 !== 'number' ||
-            typeof lon1 !== 'number' ||
-            typeof lat2 !== 'number' ||
-            typeof lon2 !== 'number'
-        ) {
-            return null; // Invalid coordinates
+        if (typeof lat1 !== 'number' || typeof lon1 !== 'number' || typeof lat2 !== 'number' || typeof lon2 !== 'number') {
+            return null;
         }
         const R = 6371; // Radius of the earth in km
         const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -284,82 +289,53 @@ export default function TaskAssignmentHub() {
         return d;
     }
 
-    /**
-     * ✅ FIX #1: This wrapper function handles the different data structures.
-     * It unpacks Report [Lng, Lat] and Worker {lat, lng} objects
-     * and passes them correctly to getDistanceFromLatLonInKm.
-     */
-    const calculateApproxDistance = (reportCoordinates, workerLocation) => {
-        if (!reportCoordinates || !workerLocation) return null;
-
-        return getDistanceFromLatLonInKm(
-            reportCoordinates[1],  // lat1: Report Latitude
-            reportCoordinates[0],  // lon1: Report Longitude
-            workerLocation.latitude,   // lat2: Worker Latitude
-            workerLocation.longitude   // lon2: Worker Longitude
-        );
-    };
-
-
-    const findBestWorker = (report, availableWorkers) => {
-        if (!report.location?.coordinates) return null;
-        let bestWorker = null;
-        let minDistance = Infinity;
-
-        const DISTANCE_THRESHOLD = 10; // 10 km threshold
-
-        for (const worker of availableWorkers) {
-            const workerLoc = worker.workerDetails?.currentLocation;
-            if (!workerLoc) continue;
-
-            // ✅ Use the fixed wrapper function
-            const distance = calculateApproxDistance(report.location.coordinates, workerLoc);
-
-            if (distance !== null && distance < minDistance) {
-                minDistance = distance;
-                bestWorker = worker;
-            }
-        }
-
-        if (minDistance <= DISTANCE_THRESHOLD) return bestWorker;
-        return null;
+    const findBestWorker = (report) => {
+        // Relies on server-calculated 'bestMatch' data
+        return report.bestMatch || null;
     };
 
     // --- Data Fetching ---
 
-    const fetchReports = async () => {
+    const fetchReports = useCallback(async () => {
         setReportsLoading(true);
         const token = getToken();
-        if (!token) { return; }
+        if (!token) { setReportsLoading(false); return; }
         try {
-            const res = await fetch("http://localhost:8001/api/admin/reports/unassigned", {
+            // New route: Fetches reports with server-calculated best match distance
+            const res = await fetch("http://localhost:8001/api/admin/reports/unassigned/distances", {
+                method: "GET",
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            if (data.success) setReports(data.data);
-        } catch (err) { console.error("Error fetching reports:", err); }
-        setReportsLoading(false);
-    };
 
-    const fetchWorkers = async () => {
+            if (data.success) {
+                setReports(data.data);
+            }
+        } catch (err) { console.error("Error fetching reports with distances:", err); }
+        setReportsLoading(false);
+    }, []);
+
+    const fetchWorkers = useCallback(async () => {
         setWorkersLoading(true);
         const token = getToken();
-        if (!token) { return; }
+        if (!token) { setWorkersLoading(false); return; }
         try {
             const res = await fetch("http://localhost:8001/api/admin/workers", {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            if (data.success) setWorkers(data.data.workers);
+            if (data.success) setWorkers(data.data.workers.map(w => ({
+                ...w,
+                stats: w.stats || { avgRating: 0, completedTasks: 0 }
+            })));
         } catch (err) { console.error("Error fetching workers:", err); }
         setWorkersLoading(false);
-    };
+    }, []);
 
-    const fetchAllReports = async () => {
-        if (allReports.length > 0) return;
+    const fetchAllReports = useCallback(async () => {
         setAllReportsLoading(true);
         const token = getToken();
-        if (!token) { return; }
+        if (!token) { setAllReportsLoading(false); return; }
         try {
             const res = await fetch("http://localhost:8001/api/admin/reports/all", {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -368,16 +344,15 @@ export default function TaskAssignmentHub() {
             if (data.success) setAllReports(data.data);
         } catch (err) { console.error("Error fetching all reports:", err); }
         setAllReportsLoading(false);
-    };
-
-    // --- Event Handlers ---
+    }, []);
 
     const handleAutoAssignAll = async () => {
         setReportsLoading(true);
         const token = getToken();
-        if (!token) { return; }
+        if (!token) { setReportsLoading(false); return; }
 
         try {
+            // Note: This route must be updated on the server to use road distance logic
             const res = await fetch("http://localhost:8001/api/admin/auto-assign", {
                 method: "POST",
                 headers: {
@@ -403,7 +378,7 @@ export default function TaskAssignmentHub() {
 
     const handleManualAssign = async (reportId, workerId, workerName) => {
         setIsAssigning(reportId);
-        if (reportToAssign) handleCloseModal(); // Close modal if it's open
+        if (reportToAssign) handleCloseModal();
 
         const token = getToken();
         try {
@@ -414,9 +389,7 @@ export default function TaskAssignmentHub() {
             });
             const data = await res.json();
             if (data.success) {
-                // Show success message on the card
                 setReports(prev => prev.map(r => r._id === reportId ? { ...r, justAssignedTo: workerName } : r));
-                // Remove the card after a short delay
                 setTimeout(() => {
                     setReports(prev => prev.filter(r => r._id !== reportId));
                 }, 2000);
@@ -428,20 +401,21 @@ export default function TaskAssignmentHub() {
     };
 
 
-    const handleOpenModal = (report) => {
-        const reportLoc = report.location?.coordinates; // [Lng, Lat]
+    const handleOpenModal = async (report) => {
+        const reportLoc = report.location?.coordinates;
 
-        const workersWithDist = workers.map(worker => {
-            const workerLoc = worker.workerDetails?.currentLocation; // { latitude, longitude }
+        const workersWithDist = workers
+            .filter(w => w.role === 'worker')
+            .map(worker => {
+                const workerLoc = worker.workerDetails?.currentLocation;
 
-            // ===============================================
-            // ✅ FIX #2: THE FIX IS APPLIED HERE
-            // Use the same fixed wrapper function
-            // ===============================================
-            const distance = calculateApproxDistance(reportLoc, workerLoc);
+                // Use Haversine for the manual assignment list proximity display
+                const distance = (reportLoc && workerLoc)
+                    ? getDistanceFromLatLonInKm(reportLoc[1], reportLoc[0], workerLoc.latitude, workerLoc.longitude)
+                    : null;
 
-            return { ...worker, distance };
-        });
+                return { ...worker, distance };
+            });
 
         setWorkersWithDistance(workersWithDist);
         setReportToAssign(report);
@@ -456,7 +430,7 @@ export default function TaskAssignmentHub() {
     useEffect(() => {
         fetchReports();
         fetchWorkers();
-    }, []);
+    }, [fetchReports, fetchWorkers]);
 
     const availableWorkers = workers.filter(w => w.isActive);
 
@@ -497,14 +471,13 @@ export default function TaskAssignmentHub() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                {/* --- Column 1: Main Content (Tabs) --- */}
                 <div className="md:col-span-2">
                     {view === 'unassigned' && (
                         <div className="grid gap-4">
-                            {reportsLoading && <p>Loading reports...</p>}
+                            {reportsLoading && <p>Loading reports and calculating road distances...</p>}
                             {!reportsLoading && reports.length === 0 && <p>🎉 No unassigned reports!</p>}
                             {reports.map((report) => {
-                                const bestMatch = findBestWorker(report, availableWorkers);
+                                const bestMatch = findBestWorker(report);
                                 return (
                                     <UnassignedReportCard
                                         key={report._id}
@@ -513,6 +486,7 @@ export default function TaskAssignmentHub() {
                                         onAssign={handleManualAssign}
                                         onManualAssign={handleOpenModal}
                                         isAssigning={isAssigning === report._id}
+                                        isGeocoding={false}
                                     />
                                 );
                             })}
@@ -529,7 +503,6 @@ export default function TaskAssignmentHub() {
                     )}
                 </div>
 
-                {/* --- Column 2: Workers List (Sidebar) --- */}
                 <div className="md:col-span-1">
                     <h2 className="text-xl font-semibold text-gray-600 mb-4">
                         All Workers ({workers.length})

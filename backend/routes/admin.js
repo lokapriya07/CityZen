@@ -9,7 +9,7 @@ const AutomatedRule = require("../models/AutomatedRule")
 const Analytics = require("../models/Analytics")
 const { protect, authorize } = require("../middleware/auth")
 const { handleValidationErrors } = require("../middleware/validation")
-
+const { calculateRoadDistanceKm } = require("./dist");
 const router = express.Router()
 
 router.use(protect)
@@ -706,4 +706,62 @@ router.post(
   }
 );
 
+const findBestWorkerByRoadDistance = async (report, availableWorkers) => {
+  const reportAddress = report.address; // Report address from the Report Model
+
+  let bestWorker = null;
+  let minDistance = Infinity;
+  const DISTANCE_THRESHOLD = 25; // Maximum distance for auto-assignment (in km)
+
+  for (const worker of availableWorkers) {
+    const workerAddress = worker.workerDetails?.currentLocation?.address; // Worker address from the User Model
+
+    if (!workerAddress || !reportAddress || !worker.isActive) continue;
+
+    try {
+      // 💡 CORE CHANGE: Calculate road distance using the two addresses
+      const distance = await calculateRoadDistanceKm(workerAddress, reportAddress);
+
+      if (distance !== null && distance < minDistance) {
+        minDistance = distance;
+        bestWorker = { ...worker.toObject(), distance: distance.toFixed(1) }; // Attach distance (1 decimal place)
+      }
+    } catch (error) {
+      console.error(`Skipping worker ${worker.name}: Distance calc failed.`, error);
+    }
+  }
+
+  // Only return the best worker if they are within the acceptable range
+  if (bestWorker && minDistance <= DISTANCE_THRESHOLD) {
+    return bestWorker;
+  }
+  return null;
+};
+
+
+// 💡 NEW ROUTE: Fetch unassigned reports with pre-calculated best-match distances
+router.get("/reports/unassigned/distances", async (req, res) => {
+  try {
+    const unassignedReports = await Report.find({ status: "pending" });
+    const workers = await User.find({ role: "worker", isActive: true }).select(
+      "name email workerDetails.currentLocation"
+    );
+
+    // Process reports to find the best match with distance
+    const reportsWithDistances = await Promise.all(
+      unassignedReports.map(async (report) => {
+        const bestMatch = await findBestWorkerByRoadDistance(report, workers);
+        return {
+          ...report.toObject(),
+          bestMatch: bestMatch
+        };
+      })
+    );
+
+    res.json({ success: true, data: reportsWithDistances });
+  } catch (error) {
+    console.error("Error fetching reports with distances:", error);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+  });
 module.exports = router;
