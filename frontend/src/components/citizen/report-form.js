@@ -26,6 +26,8 @@ export function ReportForm({ onSubmit, isSubmitting }) {
     const [fileLabel, setFileLabel] = useState('Click to select a photo or drag and drop');
     const [fileLabelStyle, setFileLabelStyle] = useState({});
     const [classificationResult, setClassificationResult] = useState("");
+    // NEW STATE: Track if the uploaded image is valid (both content and source)
+    const [isImageValid, setIsImageValid] = useState(false);
     const [locationStatus, setLocationStatus] = useState('');
     const [imagePreview, setImagePreview] = useState('');
     const formRef = useRef(null);
@@ -108,6 +110,8 @@ export function ReportForm({ onSubmit, isSubmitting }) {
         setFileLabelStyle({});
         setClassificationResult(message || "");
         setImagePreview('');
+        // IMPORTANT: Reset image validity when file input is reset
+        setIsImageValid(false);
     };
 
     const handleFileChangeAndValidation = async (event) => {
@@ -126,13 +130,14 @@ export function ReportForm({ onSubmit, isSubmitting }) {
         setClassificationResult("Classifying, please wait...");
         setFileLabel(`Validating ${fileToValidate.name}...`);
         setImagePreview('');
+        setIsImageValid(false); // Assume invalid until successful validation
 
         try {
             const token = localStorage.getItem("token"); // JWT token from login
             const response = await fetch("http://localhost:8000/upload-image", {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`, // <--- Add token here
+                    'Authorization': `Bearer ${token}`,
                 },
                 body: uploadFormData,
             });
@@ -144,21 +149,34 @@ export function ReportForm({ onSubmit, isSubmitting }) {
 
             const res = await response.json();
             const resultMessage = res.message || "";
+            const status = res.status || "rejected"; // Default to rejected if status is missing
 
-            if (resultMessage.toLowerCase().includes("please select a valid image")) {
-                resetFileInput("❌ Invalid image. Please upload a photo of garbage.");
+            // --- NEW Logic for Reject Status ---
+            if (status === 'rejected') {
+                setClassificationResult(`❌ ${resultMessage}`);
+                setFileLabel('Validation Failed. Select a different photo.');
+                setFileLabelStyle({
+                    borderColor: 'var(--error-color)',
+                    background: '#ffebee',
+                    color: 'var(--error-color)'
+                });
+                setIsImageValid(false);
+                setImagePreview('');
+                setFormData(prev => ({ ...prev, photos: null })); // Ensure photos is null on rejection
                 return;
             }
 
-            setClassificationResult(resultMessage);
+            // If status is 'accepted'
+            setClassificationResult(`✅ ${resultMessage}`);
             setFormData(prev => ({ ...prev, photos: fileToValidate }));
             setFileLabel(`📷 ${fileToValidate.name} selected`);
             setFileLabelStyle({ borderColor: 'var(--success-color)', background: '#e8f5e9', color: 'var(--success-color)' });
             setImagePreview(previewUrl);
+            setIsImageValid(true);
 
         } catch (err) {
             console.error(err);
-            resetFileInput("❌ Error: Could not classify image. Please try again.");
+            resetFileInput("❌ Error: Could not reach server for image validation. Please try again.");
         }
     };
 
@@ -166,8 +184,9 @@ export function ReportForm({ onSubmit, isSubmitting }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.photos) {
-            alert("Please upload and validate a photo of the waste spot before submitting.");
+        // Check both formData.photos and the new isImageValid flag
+        if (!formData.photos || !isImageValid) {
+            alert("Please upload a valid photo (not downloaded) of the waste spot before submitting.");
             return;
         }
         if (!formData.urgency) {
@@ -176,12 +195,13 @@ export function ReportForm({ onSubmit, isSubmitting }) {
         }
 
         try {
+            // Submission logic (unchanged)
             const token = localStorage.getItem("token"); // JWT token
             const response = await fetch("http://localhost:8001/api/reports", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`, // <--- Add token here
+                    "Authorization": `Bearer ${token}`,
                 },
                 body: JSON.stringify(formData),
             });
@@ -207,6 +227,31 @@ export function ReportForm({ onSubmit, isSubmitting }) {
 
 
     const indianStates = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi"];
+
+    // Logic to determine the style for the classification result message
+    const resultStyle = {
+        marginTop: '15px',
+        padding: '10px',
+        borderRadius: '12px',
+        background: 'var(--background-color)',
+        border: '1px solid var(--border-color)'
+    };
+    const resultSpanStyle = {
+        fontWeight: '600',
+        color: 'var(--primary-color)'
+    };
+
+    // Update styles if the image is rejected
+    if (classificationResult.includes("❌")) {
+        resultStyle.border = '1px solid var(--error-color)';
+        resultStyle.background = '#ffebee';
+        resultSpanStyle.color = 'var(--error-color)';
+    } else if (classificationResult.includes("✅")) {
+        resultStyle.border = '1px solid var(--success-color)';
+        resultStyle.background = '#e8f5e9';
+        resultSpanStyle.color = 'var(--success-color)';
+    }
+
 
     return (
         <div className="container mx-auto px-6 py-8">
@@ -287,11 +332,18 @@ export function ReportForm({ onSubmit, isSubmitting }) {
                                 </div>
                             )}
                             <div className="file-upload">
-                                <input type="file" id="photos" name="photos" className="file-input" accept="image/*" onChange={handleFileChangeAndValidation} ref={fileInputRef} />
+                                {/* Added capture="environment" hint */}
+                                <input type="file" id="photos" name="photos" className="file-input" accept="image/*" onChange={handleFileChangeAndValidation} ref={fileInputRef} capture="environment" />
                                 <label htmlFor="photos" className="file-label" style={fileLabelStyle}><UploadIcon /><span>{fileLabel}</span></label>
                             </div>
-                            <div className="help-text">The image will be validated before it is accepted.</div>
-                            {classificationResult && (<div style={{ marginTop: '15px', padding: '10px', borderRadius: '12px', background: 'var(--background-color)', border: '1px solid var(--border-color)' }}><p style={{ fontWeight: '500', color: 'var(--text-color)', margin: 0, textAlign: 'center' }}>Result: <span style={{ fontWeight: '600', color: 'var(--primary-color)' }}>{classificationResult}</span></p></div>)}
+                            <div className="help-text">The image will be validated (EXIF & Content) before it is accepted.</div>
+                            {classificationResult && (
+                                <div style={resultStyle}>
+                                    <p style={{ fontWeight: '500', color: 'var(--text-color)', margin: 0, textAlign: 'center' }}>
+                                        Result: <span style={resultSpanStyle}>{classificationResult}</span>
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="section" style={{ animationDelay: '0.5s' }}>
@@ -303,7 +355,13 @@ export function ReportForm({ onSubmit, isSubmitting }) {
                         <div className="checkbox-group"><input type="checkbox" id="updates" name="updates" checked={formData.updates} onChange={handleChange} /><label htmlFor="updates">I would like to receive updates on the action taken</label></div>
                     </div>
                     <div className="submit-section">
-                        <button type="submit" className="submit-btn" disabled={isSubmitting}>
+                        {/* The submit button is now disabled if the image validation failed (isImageValid is false) */}
+                        <button
+                            type="submit"
+                            className="submit-btn"
+                            disabled={isSubmitting || !isImageValid}
+                            style={isImageValid ? {} : { opacity: 0.6, cursor: 'not-allowed' }}
+                        >
                             {isSubmitting ? 'Submitting...' : 'Submit Complaint'}
                         </button>
                         <div className="help-text" style={{ marginTop: '15px' }}>

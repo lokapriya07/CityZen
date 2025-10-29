@@ -25,25 +25,20 @@ const UserSchema = new mongoose.Schema({
     default: true,
   },
 
-  // --- 💡 FIX 1: Moved fields to the top level ---
   points: {
     type: Number,
     default: 0,
   },
   phone: {
     type: String,
-    // This function makes 'phone' required ONLY if role is 'worker'
     required: function () { return this.role === 'worker'; }
   },
   avatar: {
     type: String,
-    // A default image can prevent UI bugs if one isn't provided
-    default: 'https://i.pravatar.cc/150', // A placeholder image service
-    // This function makes 'avatar' required ONLY if role is 'worker'
+    default: 'https://i.pravatar.cc/150',
     required: function () { return this.role === 'worker'; }
   },
 
-  // This object is only populated when role === 'worker'
   workerDetails: {
     employeeId: { type: String, unique: true, sparse: true },
     specialization: {
@@ -62,15 +57,12 @@ const UserSchema = new mongoose.Schema({
       latitude: { type: Number, default: 0 },
       longitude: { type: Number, default: 0 },
       timestamp: { type: Date, default: Date.now },
+      // 💡 ADDED: Address text field for the worker's location
+      address: { type: String, default: "" },
     },
-
-    // --- 💡 FIX 2: Removed 'points' from here ---
-    // points: { type: Number, default: 0 }, 
-    // 'avatar' and 'phone' were also incorrectly here
   },
 });
 
-// This special function runs *before* a user is saved
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
