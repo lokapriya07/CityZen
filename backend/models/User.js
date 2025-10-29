@@ -20,38 +20,57 @@ const UserSchema = new mongoose.Schema({
     enum: ['user', 'worker', 'admin'],
     default: 'user',
   },
-  // isActive applies to ALL roles (admin/worker status)
   isActive: {
     type: Boolean,
     default: true,
   },
 
-  // 💡 workerDetails is now treated as an OPTIONAL sub-document
-  // It should only be populated/updated when role === 'worker'
+  // --- 💡 FIX 1: Moved fields to the top level ---
+  points: {
+    type: Number,
+    default: 0,
+  },
+  phone: {
+    type: String,
+    // This function makes 'phone' required ONLY if role is 'worker'
+    required: function () { return this.role === 'worker'; }
+  },
+  avatar: {
+    type: String,
+    // A default image can prevent UI bugs if one isn't provided
+    default: 'https://i.pravatar.cc/150', // A placeholder image service
+    // This function makes 'avatar' required ONLY if role is 'worker'
+    required: function () { return this.role === 'worker'; }
+  },
 
+  // This object is only populated when role === 'worker'
   workerDetails: {
-    type: { // Define the structure of the workerDetails object
-      employeeId: { type: String, unique: true, sparse: true },
-      phone: { type: String },
-      specialization: {
-        type: [String],
-        default: ['general waste'],
-        enum: ['general waste', 'recycling', 'hazardous waste', 'illegal dumping', 'organic waste', 'composting'],
-      },
-      currentLocation: { // Used for distance calculation
-        latitude: { type: Number, default: 0 },
-        longitude: { type: Number, default: 0 },
-        // 🚨 ADD THIS FIELD 🚨
-        timestamp: { type: Date, default: Date.now },
-      },
-      points: { type: Number, default: 0 },
-      avatar: { type: String },
+    employeeId: { type: String, unique: true, sparse: true },
+    specialization: {
+      type: [String],
+      default: ['general waste'],
+      enum: [
+        'general waste',
+        'recycling',
+        'hazardous waste',
+        'illegal dumping',
+        'organic waste',
+        'composting',
+      ],
     },
+    currentLocation: {
+      latitude: { type: Number, default: 0 },
+      longitude: { type: Number, default: 0 },
+      timestamp: { type: Date, default: Date.now },
+    },
+
+    // --- 💡 FIX 2: Removed 'points' from here ---
+    // points: { type: Number, default: 0 }, 
+    // 'avatar' and 'phone' were also incorrectly here
   },
 });
 
 // This special function runs *before* a user is saved
-// It automatically hashes the password for security
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();

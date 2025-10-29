@@ -49,6 +49,26 @@ router.put(
   }
 );
 
+// ✅ Get worker location
+router.get("/:name/location", async (req, res) => {
+  try {
+    // Find by name instead of ID
+    const worker = await User.findOne({ name: req.params.name }).select("name workerDetails.currentLocation");
+    if (!worker) return res.status(404).json({ success: false, message: "Worker not found." });
+
+    const { latitude, longitude, timestamp } = worker.workerDetails.currentLocation || {};
+
+    return res.json({
+      success: true,
+      worker: worker.name,
+      location: latitude && longitude ? { latitude, longitude, timestamp } : null,
+    });
+  } catch (error) {
+    console.error("Error fetching worker location:", error);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
+});
+
 
 // @desc    Get worker dashboard data
 // @route   GET /api/worker/dashboard
