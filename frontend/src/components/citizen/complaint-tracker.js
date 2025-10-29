@@ -2406,13 +2406,15 @@ export function ComplaintTracker({ complaint }) {
           </CardHeader>
           <CardContent>
             {/* --- Worker Info & Actions --- */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-4">
+           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full">
+              {/* Left: Worker info */}
+              <div className="flex items-center gap-4 flex-1">
                 <Avatar className="w-12 h-12 border-2 border-white shadow-md">
                   <AvatarImage src={complaint.worker.avatar} alt={complaint.worker.name} />
                   <AvatarFallback>{complaint.worker.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <div>
+
+                <div className="flex flex-col">
                   <p className="font-bold text-lg">{complaint.worker.name}</p>
                   {(complaint.worker.rating || complaint.worker.completedTasks) && (
                     <p className="text-sm text-gray-600 flex items-center gap-1 flex-wrap">
@@ -2432,20 +2434,33 @@ export function ComplaintTracker({ complaint }) {
                   )}
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                <Button asChild variant="outline" size="sm" className="flex items-center gap-1.5">
+
+              {/* Right: Buttons */}
+              <div className="flex flex-wrap sm:flex-row gap-2 justify-center sm:justify-end w-full sm:w-auto">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center justify-center gap-1.5 flex-1 sm:flex-none min-w-[100px]"
+                >
                   <a href={`tel:${complaint.worker.contact}`}>
                     <span>📞</span>
                     Call
                   </a>
                 </Button>
-                <Button variant="outline" size="sm" className="justify-start bg-transparent"
-                  onClick={() => setShowMessaging(true)}>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center justify-center gap-1.5 flex-1 sm:flex-none min-w-[100px] bg-transparent"
+                  onClick={() => setShowMessaging(true)}
+                >
                   <span>💬</span>
                   Chat
                 </Button>
               </div>
             </div>
+
 
             {/* --- Live Location Section --- */}
             <div className="mt-6">
@@ -2599,7 +2614,7 @@ export function ComplaintTracker({ complaint }) {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 w-full">
               {/* Send Message */}
               <Button
                 variant="outline"
