@@ -165,18 +165,33 @@ export default function SignupForm() {
               required
             />
           </div>
-          <div>
-            <label>Account Type</label>
-            <select
-              className="w-full border rounded p-2"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="user">Citizen - Report waste issues</option>
-              <option value="worker">Worker - Handle cleanup tasks</option>
-              <option value="admin">Administrator - Manage operations</option>
-            </select>
-          </div>
+         <div className="w-full max-w-full overflow-visible">
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Account Type
+  </label>
+  <select
+    className="
+      w-full 
+      border border-gray-300 
+      rounded-lg 
+      px-3 py-2.5 
+      text-sm 
+      bg-white 
+      focus:outline-none 
+      focus:ring-2 focus:ring-green-500 
+      focus:border-green-500 
+      transition-all 
+      appearance-none
+    "
+    value={role}
+    onChange={(e) => setRole(e.target.value)}
+  >
+    <option value="user">Citizen - Report waste issues</option>
+    <option value="worker">Worker - Handle cleanup tasks</option>
+    <option value="admin">Administrator - Manage operations</option>
+  </select>
+</div>
+
           {/* NEW: Conditionally render phone input for workers */}
           {isWorker && (
             <div>
