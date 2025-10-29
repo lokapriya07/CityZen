@@ -4,13 +4,14 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Check } from "lucide-react";
+// ✅ ADDED Star and X for the new UI
+import { Check, Star, X } from "lucide-react";
 import { WorkerMessaging } from "./message";
 import { ReportIssue } from "./report-issue";
 import { ShareLocation } from "./ShareLocation";
 import { CallSupport } from "./CallSupport";
 
-/* ----------------------------- Progress Tracker ---------------------------- */
+
 export function HorizontalProgressTracker({ steps, estimatedDate }) {
   const activeStepIndex = steps.findLastIndex((s) => s.completed);
   const segmentCount = steps.length - 1;
@@ -22,14 +23,13 @@ export function HorizontalProgressTracker({ steps, estimatedDate }) {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Progress Timeline
           </h3>
-          <div className="text-sm text-gray-600">
+          <div className="text-xs sm:text-sm text-gray-600">
             Estimated Completion:{" "}
             <span className="font-medium text-gray-800">
               {estimatedDate || "To be determined"}
             </span>
           </div>
         </div>
-
         <div className="flex items-start w-full relative">
           {steps.map((step, index) => {
             const isCompleted = step.completed;
@@ -40,9 +40,11 @@ export function HorizontalProgressTracker({ steps, estimatedDate }) {
               <div key={step.id} className="flex-1 flex flex-col items-center relative">
                 {!isLast && (
                   <div
-                    className={`absolute top-6 left-1/2 w-full h-0.5 -translate-y-1/2 z-0 ${index < activeStepIndex ? "bg-green-600" : "bg-gray-200"
+                    className={`absolute top-6 left-[60%] right-[-60%] h-0.5 z-0 transition-all duration-500 
+                    ${index < activeStepIndex
+                        ? "bg-green-600"
+                        : "bg-gray-200"
                       }`}
-                    style={{ left: "calc(50% + 24px)" }}
                   />
                 )}
 
@@ -50,10 +52,10 @@ export function HorizontalProgressTracker({ steps, estimatedDate }) {
                   <div className="mb-4">
                     <div
                       className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all duration-200 ${isCompleted
-                          ? "bg-green-600 border-green-600 text-white shadow-sm"
-                          : isActive
-                            ? "bg-white border-green-600 text-green-600 shadow-sm"
-                            : "bg-white border-gray-300 text-gray-400"
+                        ? "bg-green-600 border-green-600 text-white shadow-sm"
+                        : isActive
+                          ? "bg-white border-green-600 text-green-600 shadow-sm"
+                          : "bg-white border-gray-300 text-gray-400"
                         }`}
                     >
                       {isCompleted ? (
@@ -114,15 +116,149 @@ export function HorizontalProgressTracker({ steps, estimatedDate }) {
   );
 }
 
+// ------------------------------------------------------------------
+// ✅ NEW FEEDBACK COMPONENTS
+// ------------------------------------------------------------------
+
+/**
+ * A simple star rating component
+ */
+function StarRating({ rating, setRating, count = 5 }) {
+  const [hover, setHover] = useState(0);
+
+  return (
+    <div className="flex space-x-1">
+      {[...Array(count)].map((_, index) => {
+        const ratingValue = index + 1;
+        return (
+          <label key={index}>
+            <input
+              type="radio"
+              name="rating"
+              value={ratingValue}
+              onClick={() => setRating(ratingValue)}
+              className="sr-only"
+            />
+            <Star
+              className="cursor-pointer"
+              color={ratingValue <= (hover || rating) ? "#f59e0b" : "#e5e7eb"}
+              fill={ratingValue <= (hover || rating) ? "#f59e0b" : "none"}
+              onMouseEnter={() => setHover(ratingValue)}
+              onMouseLeave={() => setHover(0)}
+            />
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * A modal form for submitting feedback
+ */
+function FeedbackForm({ worker, isWorkerAssigned, onClose, onSubmit }) {
+  const [serviceRating, setServiceRating] = useState(0);
+  const [workerRating, setWorkerRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (serviceRating === 0) {
+      alert("Please provide a service rating.");
+      return;
+    }
+    if (isWorkerAssigned && workerRating === 0) {
+      alert("Please provide a worker rating.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    await onSubmit({
+      serviceRating,
+      workerRating: isWorkerAssigned ? workerRating : undefined,
+      comments: comment,
+    });
+    setIsSubmitting(false);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-white">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Share Your Feedback</CardTitle>
+            <Button variant="ghost" size="icon" onClick={onClose} disabled={isSubmitting}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="font-medium text-gray-700">How was the service?</label>
+              <StarRating rating={serviceRating} setRating={setServiceRating} />
+            </div>
+
+            {isWorkerAssigned && worker && (
+              <div className="space-y-2">
+                <label className="font-medium text-gray-700">How was {worker.name}?</label>
+                <StarRating rating={workerRating} setRating={setWorkerRating} />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="comment" className="font-medium text-gray-700">Additional Comments (Optional)</label>
+              <textarea
+                id="comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={4}
+                placeholder="Tell us more about your experience..."
+                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Submitting..." : "Submit Feedback"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
+// ------------------------------------------------------------------
+// ✅ END NEW FEEDBACK COMPONENTS
+// ------------------------------------------------------------------
+
+
 /* ---------------------------- Complaint Tracker ---------------------------- */
 const getAuthToken = () => localStorage.getItem("authToken");
 
 export function ComplaintTracker({ complaint }) {
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // ✅ REMOVED feedback state from here, it's now in FeedbackForm
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
-  const [serviceRating, setServiceRating] = useState(0);
-  const [workerRating, setWorkerRating] = useState(0);
-  const [comment, setComment] = useState("");
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   const [showMessaging, setShowMessaging] = useState(false);
@@ -240,15 +376,10 @@ export function ComplaintTracker({ complaint }) {
       : complaint.location || "Unknown location";
 
   /* ---------------------------- Feedback Submission --------------------------- */
-  const handleSubmitFeedback = async () => {
+  // ✅ MODIFIED to accept feedbackData from the form
+  const handleSubmitFeedback = async (feedbackData) => {
     const token = getAuthToken();
     if (!token) return alert("Please login first.");
-
-    const feedbackData = {
-      serviceRating,
-      workerRating,
-      comments: comment,
-    };
 
     try {
       const res = await fetch(`/api/reports/${complaint.id}/feedback`, {
@@ -260,13 +391,20 @@ export function ComplaintTracker({ complaint }) {
         body: JSON.stringify(feedbackData),
       });
       const data = await res.json();
-      if (res.ok && data.success) setFeedbackSubmitted(true);
-      else alert("Feedback failed: " + (data.message || "Try again."));
+      if (res.ok && data.success) {
+        setFeedbackSubmitted(true); // ✅ Set state to show "Thank you"
+      } else {
+        alert("Feedback failed: " + (data.message || "Try again."));
+      }
     } catch (e) {
       console.error(e);
       alert("Network error. Try again.");
     }
   };
+
+  // ✅ NEW: Check if feedback already exists
+  const hasFeedback = complaint.feedback || feedbackSubmitted;
+
 
   /* ---------------------------------- JSX ---------------------------------- */
   return (
@@ -384,7 +522,48 @@ export function ComplaintTracker({ complaint }) {
         </Card>
       )}
 
+      {/* ------------------------------------------------------------------ */}
+      {/* ✅ NEW FEEDBACK SECTION */}
+      {/* ------------------------------------------------------------------ */}
+      {normalizedStatus === 'resolved' && (
+        <Card className={hasFeedback ? "bg-gray-50 border-gray-200" : "bg-emerald-50 border-emerald-200"}>
+          <CardContent className="p-6">
+            {hasFeedback ? (
+              // --- Already Submitted View ---
+              <div className="text-center">
+                <Check className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+                <h3 className="text-lg font-semibold text-gray-900">Thank you for your feedback!</h3>
+                {complaint.feedback && (
+                  <div className="mt-2 text-sm text-gray-600 flex items-center justify-center gap-4">
+                    <p>Service: <span className="text-amber-500">{'★'.repeat(complaint.feedback.serviceRating)}{'☆'.repeat(5 - complaint.feedback.serviceRating)}</span></p>
+                    {complaint.feedback.workerRating > 0 && (
+                      <p>Worker: <span className="text-amber-500">{'★'.repeat(complaint.feedback.workerRating)}{'☆'.repeat(5 - complaint.feedback.workerRating)}</span></p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              // --- "Rate Us" Prompt View ---
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-emerald-800">Issue Resolved - Share Your Feedback</h3>
+                  <p className="text-sm text-emerald-700">Help us improve our service by sharing your experience.</p>
+                </div>
+                <Button
+                  onClick={() => setShowFeedbackForm(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto flex-shrink-0"
+                >
+                  ⭐ Rate Our Service
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+
       {/* Quick Actions */}
+      {/* ✅ Logic updated to hide some actions if resolved */}
       {isWorkerAssigned && (
         <Card>
           <CardHeader>
@@ -392,18 +571,26 @@ export function ComplaintTracker({ complaint }) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-              <Button variant="outline" onClick={() => setShowMessaging(true)}>
-                Send Message
-              </Button>
+              {/* Only show messaging/location if not resolved */}
+              {normalizedStatus !== 'resolved' && (
+                <>
+                  <Button variant="outline" onClick={() => setShowMessaging(true)}>
+                    Send Message
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowShareLocation(true)}
+                  >
+                    Share Location
+                  </Button>
+                </>
+              )}
+
               <Button variant="outline" onClick={() => setShowCallSupport(true)}>
                 Call Support
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowShareLocation(true)}
-              >
-                Share Location
-              </Button>
+
+              {/* Always allow reporting an issue */}
               <Button variant="outline" onClick={() => setShowReportIssue(true)}>
                 Report Issue
               </Button>
@@ -438,6 +625,19 @@ export function ComplaintTracker({ complaint }) {
           </CardContent>
         </Card>
       )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* ✅ NEW FEEDBACK MODAL RENDER */}
+      {/* ------------------------------------------------------------------ */}
+      {showFeedbackForm && (
+        <FeedbackForm
+          worker={complaint.worker}
+          isWorkerAssigned={isWorkerAssigned}
+          onClose={() => setShowFeedbackForm(false)}
+          onSubmit={handleSubmitFeedback}
+        />
+      )}
+
     </div>
   );
 }

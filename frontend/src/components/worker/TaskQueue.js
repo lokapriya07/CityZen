@@ -213,20 +213,179 @@
 
 
 
+// "use client";
+
+// import React from "react";
+// import {
+//   MapPin,
+//   Clock,
+//   CheckCircle,
+//   Navigation,
+//   Play,
+//   Phone,
+// } from "lucide-react";
+
+// export default function TaskQueue({ tasks = [], onStatusUpdate }) {
+//   // 🔁 Get next action for each task status
+//   const getNextAction = (status) => {
+//     switch (status) {
+//       case "assigned":
+//         return { label: "Accept Task", icon: CheckCircle, nextStatus: "accepted" };
+//       case "accepted":
+//         return { label: "On the Way", icon: Navigation, nextStatus: "on-the-way" };
+//       case "on-the-way":
+//         return { label: "Start Work", icon: Play, nextStatus: "in-progress" };
+//       case "in-progress":
+//         return { label: "Mark Complete", icon: CheckCircle, nextStatus: "completed" };
+//       default:
+//         return null;
+//     }
+//   };
+
+//   const handleActionClick = (taskId, nextStatus) => {
+//     if (onStatusUpdate) onStatusUpdate(taskId, nextStatus);
+//   };
+
+//   const handleNavigate = (task) => {
+//     if (task.lat && task.lng) {
+//       window.open(
+//         `https://www.google.com/maps/dir/?api=1&destination=${task.lat},${task.lng}`,
+//         "_blank"
+//       );
+//     } else if (task.location) {
+//       window.open(
+//         `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.location)}`,
+//         "_blank"
+//       );
+//     } else {
+//       alert("Location details are missing for this task.");
+//     }
+//   };
+
+//   const handleCallSupport = (number) => {
+//     if (!number || number === "N/A") return alert("Support number not available!");
+//     window.open(`tel:${number}`);
+//   };
+
+//   // 🎨 Priority label colors
+//   const getPriorityStyles = (priority) => {
+//     switch (priority?.toLowerCase()) {
+//       case "high":
+//       case "critical":
+//         return "bg-red-100 text-red-800";
+//       case "low":
+//         return "bg-green-100 text-green-800";
+//       default:
+//         return "bg-blue-100 text-blue-800";
+//     }
+//   };
+
+//   return (
+//     <div className="space-y-6">
+//       {tasks.length === 0 ? (
+//         <div className="text-center text-gray-500 py-10">
+//           No tasks available
+//         </div>
+//       ) : (
+//         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+//           {tasks.map((task) => {
+//             const nextAction = getNextAction(task.status);
+//             const Icon = nextAction?.icon;
+
+//             return (
+//               <div
+//                 key={task.id}
+//                 className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-gray-100 overflow-hidden flex flex-col justify-between"
+//               >
+//                 {/* Header */}
+//                 <div className="p-4 border-b bg-gray-50 flex justify-between items-start">
+//                   <div>
+//                     <div className="text-lg font-semibold text-gray-800">
+//                       {task.displayId || task.id}
+//                     </div>
+//                     <div className="flex gap-2 mt-1">
+//                       <span
+//                         className={`px-2 py-0.5 rounded text-xs font-bold ${getPriorityStyles(
+//                           task.priority
+//                         )}`}
+//                       >
+//                         {task.priority ? task.priority.toUpperCase() : "N/A"}
+//                       </span>
+//                       <span className="px-2 py-0.5 rounded text-xs border text-gray-600">
+//                         {task.status.replace("-", " ").toUpperCase()}
+//                       </span>
+//                     </div>
+//                   </div>
+//                   <div className="text-xs text-gray-500 text-right">
+//                     <div>Assigned: {task.assignedTime}</div>
+//                     <div>Due: {task.dueTime}</div>
+//                   </div>
+//                 </div>
+
+//                 {/* Details */}
+//                 <div className="p-4 space-y-3 flex-1">
+//                   <div className="font-bold text-gray-800 text-base">
+//                     {task.title || "Untitled Task"}
+//                   </div>
+//                   <div className="flex items-start gap-2 text-sm">
+//                     <MapPin className="h-4 w-4 mt-0.5 text-gray-500" />
+//                     <div>
+//                       <div className="font-medium">{task.location || "N/A"}</div>
+//                       <div className="text-xs text-gray-500">
+//                         Waste Type: {task.wasteType || "General"}
+//                       </div>
+//                     </div>
+//                   </div>
+//                   <div className="flex items-center gap-2 text-sm text-gray-600">
+//                     <Clock className="h-4 w-4 text-gray-500" />
+//                     Estimated: {task.estimatedTime || "—"} min
+//                   </div>
+//                 </div>
+
+//                 {/* Footer Actions */}
+//                 <div className="p-4 border-t flex justify-between items-center">
+//                   <div className="flex gap-2">
+//                     <button
+//                       onClick={() => handleNavigate(task)}
+//                       className="flex items-center gap-1 px-3 py-1 border rounded text-sm hover:bg-gray-100"
+//                     >
+//                       <Navigation className="h-4 w-4" /> Navigate
+//                     </button>
+//                     <button
+//                       onClick={() => handleCallSupport(task.supportNumber)}
+//                       className="flex items-center gap-1 px-3 py-1 border rounded text-sm hover:bg-gray-100"
+//                     >
+//                       <Phone className="h-4 w-4" /> Call
+//                     </button>
+//                   </div>
+//                   {nextAction && (
+//                     <button
+//                       onClick={() =>
+//                         handleActionClick(task.id, nextAction.nextStatus)
+//                       }
+//                       className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+//                     >
+//                       {Icon && <Icon className="h-4 w-4" />}
+//                       {nextAction.label}
+//                     </button>
+//                   )}
+//                 </div>
+//               </div>
+//             );
+//           })}
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
 "use client";
 
 import React from "react";
-import {
-  MapPin,
-  Clock,
-  CheckCircle,
-  Navigation,
-  Play,
-  Phone,
-} from "lucide-react";
+import { MapPin, Clock, CheckCircle, Navigation, Play, Phone } from "lucide-react";
 
 export default function TaskQueue({ tasks = [], onStatusUpdate }) {
-  // 🔁 Get next action for each task status
   const getNextAction = (status) => {
     switch (status) {
       case "assigned":
@@ -248,15 +407,9 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
 
   const handleNavigate = (task) => {
     if (task.lat && task.lng) {
-      window.open(
-        `https://www.google.com/maps/dir/?api=1&destination=${task.lat},${task.lng}`,
-        "_blank"
-      );
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${task.lat},${task.lng}`, "_blank");
     } else if (task.location) {
-      window.open(
-        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.location)}`,
-        "_blank"
-      );
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.location)}`, "_blank");
     } else {
       alert("Location details are missing for this task.");
     }
@@ -267,7 +420,6 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
     window.open(`tel:${number}`);
   };
 
-  // 🎨 Priority label colors
   const getPriorityStyles = (priority) => {
     switch (priority?.toLowerCase()) {
       case "high":
@@ -283,11 +435,9 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
   return (
     <div className="space-y-6">
       {tasks.length === 0 ? (
-        <div className="text-center text-gray-500 py-10">
-          No tasks available
-        </div>
+        <div className="text-center text-gray-500 py-10">No tasks available</div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {tasks.map((task) => {
             const nextAction = getNextAction(task.status);
             const Icon = nextAction?.icon;
@@ -298,16 +448,14 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
                 className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-gray-100 overflow-hidden flex flex-col justify-between"
               >
                 {/* Header */}
-                <div className="p-4 border-b bg-gray-50 flex justify-between items-start">
+                <div className="p-4 border-b bg-gray-50 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                   <div>
                     <div className="text-lg font-semibold text-gray-800">
                       {task.displayId || task.id}
                     </div>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-2 mt-1 flex-wrap">
                       <span
-                        className={`px-2 py-0.5 rounded text-xs font-bold ${getPriorityStyles(
-                          task.priority
-                        )}`}
+                        className={`px-2 py-0.5 rounded text-xs font-bold ${getPriorityStyles(task.priority)}`}
                       >
                         {task.priority ? task.priority.toUpperCase() : "N/A"}
                       </span>
@@ -316,21 +464,21 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
                       </span>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500 text-right">
+                  <div className="text-xs text-gray-500">
                     <div>Assigned: {task.assignedTime}</div>
                     <div>Due: {task.dueTime}</div>
                   </div>
                 </div>
 
                 {/* Details */}
-                <div className="p-4 space-y-3 flex-1">
-                  <div className="font-bold text-gray-800 text-base">
+                <div className="p-3 sm:p-4 space-y-3 flex-1">
+                  <div className="font-bold text-gray-800 text-base sm:text-lg">
                     {task.title || "Untitled Task"}
                   </div>
                   <div className="flex items-start gap-2 text-sm">
                     <MapPin className="h-4 w-4 mt-0.5 text-gray-500" />
                     <div>
-                      <div className="font-medium">{task.location || "N/A"}</div>
+                      <div className="font-medium break-words">{task.location || "N/A"}</div>
                       <div className="text-xs text-gray-500">
                         Waste Type: {task.wasteType || "General"}
                       </div>
@@ -343,8 +491,8 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-4 border-t flex justify-between items-center">
-                  <div className="flex gap-2">
+                <div className="p-4 border-t flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => handleNavigate(task)}
                       className="flex items-center gap-1 px-3 py-1 border rounded text-sm hover:bg-gray-100"
@@ -358,12 +506,11 @@ export default function TaskQueue({ tasks = [], onStatusUpdate }) {
                       <Phone className="h-4 w-4" /> Call
                     </button>
                   </div>
+
                   {nextAction && (
                     <button
-                      onClick={() =>
-                        handleActionClick(task.id, nextAction.nextStatus)
-                      }
-                      className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                      onClick={() => handleActionClick(task.id, nextAction.nextStatus)}
+                      className="flex items-center justify-center gap-2 px-3 py-2 w-full sm:w-auto bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
                     >
                       {Icon && <Icon className="h-4 w-4" />}
                       {nextAction.label}
