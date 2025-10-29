@@ -2077,8 +2077,6 @@
 // }
 
 
-
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -2092,21 +2090,19 @@ import { ReportIssue } from "./report-issue"; // Add this import
 import { ShareLocation } from "./ShareLocation"; // Add this import
 import { CallSupport } from "./CallSupport"; // Add this import
 
+
 export function HorizontalProgressTracker({ steps, estimatedDate }) {
   const activeStepIndex = steps.findLastIndex((s) => s.completed);
-  const segmentCount = steps.length - 1;
-  const progressPercentage = segmentCount > 0 ? (activeStepIndex / segmentCount) * 100 : 0;
 
-  // Removed unused calculation variables
   return (
     <Card className="overflow-hidden border border-gray-200 shadow-sm">
-      <CardContent className="p-8">
+      <CardContent className="p-6 sm:p-8">
         {/* Header Section */}
-        <div className="text-center mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
             Progress Timeline
           </h3>
-          <div className="text-sm text-gray-600">
+          <div className="text-xs sm:text-sm text-gray-600">
             Estimated Completion:{" "}
             <span className="font-medium text-gray-800">
               {estimatedDate || "To be determined"}
@@ -2114,60 +2110,77 @@ export function HorizontalProgressTracker({ steps, estimatedDate }) {
           </div>
         </div>
 
-        {/* Timeline */}
-        <div className="flex items-start w-full relative">
+        {/* Scrollable Timeline */}
+        <div
+          className="
+            flex items-start w-full overflow-x-auto scrollbar-hide
+            gap-6 sm:gap-10 pb-4 px-2
+          "
+          style={{
+            scrollBehavior: "smooth",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
           {steps.map((step, index) => {
             const isCompleted = index <= activeStepIndex;
             const isActive = index === activeStepIndex + 1;
             const isLast = index === steps.length - 1;
 
             return (
-              <div key={step.id} className="flex-1 flex flex-col items-center relative">
-                {/* Connecting Line */}
+              <div
+                key={step.id}
+                className="relative flex-shrink-0 w-[120px] sm:w-[140px] flex flex-col items-center text-center"
+              >
+                {/* Connector Line */}
                 {!isLast && (
                   <div
-                    className={`absolute top-6 left-1/2 w-full h-0.5 -translate-y-1/2 z-0 ${index < activeStepIndex ? "bg-green-600" : "bg-gray-200"
-                      }`}
-                    style={{ left: "calc(50% + 24px)" }}
+                    className={`absolute top-6 left-[60%] right-[-60%] h-0.5 z-0 transition-all duration-500 
+                    ${
+                      index < activeStepIndex
+                        ? "bg-green-600"
+                        : "bg-gray-200"
+                    }`}
                   />
                 )}
 
-                {/* Step Content */}
-                <div className="flex flex-col items-center text-center z-10">
-                  {/* Step Indicator */}
-                  <div className="mb-4">
-                    <div
-                      className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all duration-200 ${isCompleted
+                {/* Step Indicator */}
+                <div
+                  className={`w-12 h-12 flex items-center justify-center rounded-full border-2 mb-3 sm:mb-4 z-10 transition-all duration-300
+                    ${
+                      isCompleted
                         ? "bg-green-600 border-green-600 text-white shadow-sm"
                         : isActive
-                          ? "bg-white border-green-600 text-green-600 shadow-sm"
-                          : "bg-white border-gray-300 text-gray-400"
-                        }`}
+                        ? "bg-white border-green-600 text-green-600 shadow-sm"
+                        : "bg-white border-gray-300 text-gray-400"
+                    }`}
+                >
+                  {isCompleted ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <span
+                      className={`font-medium text-sm sm:text-base ${
+                        isActive ? "text-green-600" : "text-gray-500"
+                      }`}
                     >
-                      {isCompleted ? (
-                        <Check className="w-5 h-5" />
-                      ) : (
-                        <span className={`font-medium ${isActive ? "text-green-600" : "text-gray-500"}`}>
-                          {index + 1}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                      {index + 1}
+                    </span>
+                  )}
+                </div>
 
-                  {/* Step Information */}
-                  <div className="px-2 max-w-32">
-                    <h4
-                      className={`font-semibold text-sm mb-1 ${isCompleted || isActive
+                {/* Step Info */}
+                <div className="max-w-[120px]">
+                  <h4
+                    className={`font-semibold text-xs sm:text-sm mb-1 ${
+                      isCompleted || isActive
                         ? "text-gray-900"
                         : "text-gray-500"
-                        }`}
-                    >
-                      {step.title}
-                    </h4>
-                    <p className="text-xs text-gray-500 leading-tight">
-                      {step.description}
-                    </p>
-                  </div>
+                    }`}
+                  >
+                    {step.title}
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-gray-500 leading-tight">
+                    {step.description}
+                  </p>
                 </div>
               </div>
             );
@@ -2175,20 +2188,26 @@ export function HorizontalProgressTracker({ steps, estimatedDate }) {
         </div>
 
         {/* Progress Status */}
-        <div className="mt-8 pt-6 border-t border-gray-100">
-          <div className="flex justify-between items-center text-sm">
+        <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-100">
+          <div className="flex justify-between items-center text-xs sm:text-sm">
             <span className="text-gray-600">
-              {steps.filter((s) => s.completed).length} of {steps.length} steps completed
+              {steps.filter((s) => s.completed).length} of {steps.length} steps
+              completed
             </span>
             <span className="font-medium text-gray-900">
-              {Math.round((steps.filter((s) => s.completed).length / steps.length) * 100)}%
+              {Math.round(
+                (steps.filter((s) => s.completed).length / steps.length) * 100
+              )}
+              %
             </span>
           </div>
           <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
             <div
               className="bg-green-600 h-2 rounded-full transition-all duration-300"
               style={{
-                width: `${(steps.filter((s) => s.completed).length / steps.length) * 100}%`,
+                width: `${
+                  (steps.filter((s) => s.completed).length / steps.length) * 100
+                }%`,
               }}
             />
           </div>
@@ -2197,6 +2216,7 @@ export function HorizontalProgressTracker({ steps, estimatedDate }) {
     </Card>
   );
 }
+
 //=================================================================
 // 2. MAIN COMPONENT (ComplaintTracker)
 // No changes needed here.
