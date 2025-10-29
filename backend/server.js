@@ -6,7 +6,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const { initializeSocket } = require("./sockets/sock");
 require("dotenv").config();
-
+const cookieParser = require("cookie-parser");
 
 const app = express();
 const PORT = 8001;
@@ -19,7 +19,11 @@ if (!process.env.JWT_SECRET) {
 }
 
 // Middleware
-app.use(cors());
+// ✅ This is the fix
+app.use(cors({
+  origin: "http://localhost:3000", // Your React app's URL
+  credentials: true                // Allow cookies/credentials
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -31,11 +35,14 @@ mongoose
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // Routes
+app.use(cookieParser());
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/reports", require("./routes/reports"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/worker", require("./routes/worker"));
 app.use("/api/notifications", require("./routes/notify"));
+const userRoutes = require("./routes/user");
+app.use("/api/users", userRoutes); 
 
 // Create HTTP server + Socket.IO
 const server = http.createServer(app);

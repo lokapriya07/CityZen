@@ -1,19 +1,46 @@
-import React, { useState } from "react"
+"use client";
+
+import React, { useState, useEffect } from "react" // Added useEffect
 import { Card, CardContent, CardHeader } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 
 import { AlertCircle, Gift, Zap, Leaf, Ticket } from "lucide-react"
 
+// =========================================================================
+// API UTILITY TO FETCH USER'S REAL POINTS
+// =========================================================================
+const fetchApi = async (url) => {
+  const finalUrl =
+    url.startsWith("/") && !url.startsWith("//")
+      ? `http://localhost:8001${url}` // Assumes same backend port
+      : url;
+  // IMPORTANT: Assumes user token is stored as 'token'
+  // If you store it as 'userToken', change 'token' below
+  const token = localStorage.getItem("token");
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const response = await fetch(finalUrl, { headers });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      `API Error ${response.status}: ${errorData.message || response.statusText}`
+    );
+  }
+  return response.json();
+};
+
+
 const mockRewards = [
   {
     id: "metro-500",
     name: "Metro Card Recharge",
-    description: "₹50 metro card recharge for public transport",
+    description: "Rs.50 metro card recharge for public transport",
     pointsRequired: 500,
     category: "transport",
     icon: <Zap className="w-6 h-6" />,
-    value: "₹50",
+    value: "Rs.50",
     partner: "City Metro Authority",
     available: true,
   },
@@ -42,11 +69,11 @@ const mockRewards = [
   {
     id: "cafe-coupon",
     name: "Eco Cafe Voucher",
-    description: "₹200 voucher at partner eco-friendly cafes",
+    description: "Rs.200 voucher at partner eco-friendly cafes",
     pointsRequired: 400,
     category: "coupon",
     icon: <Ticket className="w-6 h-6" />,
-    value: "₹200",
+    value: "Rs.200",
     partner: "Green Cafe Network",
     available: true,
   },
@@ -128,18 +155,51 @@ const categoryColors = {
 }
 
 const categoryLabels = {
-  transport: "🚌 Transport",
-  event: "🎉 Events",
-  merchandise: "🎁 Merchandise",
-  coupon: "🎟️ Coupons",
+  transport: "Transport",
+  event: "Events",
+  merchandise: "Merchandise",
+  coupon: "Coupons",
 }
 
 export default function RewardsStore() {
-  const [userPoints, setUserPoints] = useState(2850)
+  // Initialize points at 0 and add loading/error states
+  const [userPoints, setUserPoints] = useState(0)
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [redemptionHistory, setRedemptionHistory] = useState(mockRedemptionHistory)
   const [activeTab, setActiveTab] = useState("store")
   const [redeemingId, setRedeemingId] = useState(null)
+
+  // Add useEffect to fetch the user's data on load
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // IMPORTANT: You need a route on your backend (e.g., in your user routes)
+        // at '/api/users/profile' that returns the logged-in user's data.
+        // It should return: { success: true, data: { name: "...", points: 123 } }
+        const response = await fetchApi("/api/users/profile");
+
+        if (response.success) {
+          setUserPoints(response.data.points || 0); // Set real points from API
+        } else {
+          throw new Error("Failed to fetch user points");
+        }
+      } catch (err) {
+        setError(err.message);
+        console.error("Failed to fetch user data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, []); // Runs only on component mount
+
 
   const filteredRewards = selectedCategory
     ? mockRewards.filter((r) => r.category === selectedCategory)
@@ -149,6 +209,9 @@ export default function RewardsStore() {
     if (userPoints >= reward.pointsRequired) {
       setRedeemingId(reward.id)
       setTimeout(() => {
+        // This updates the points in the UI. 
+        // For a full fix, you should also make an API call here
+        // to update the points in the database.
         setUserPoints(userPoints - reward.pointsRequired)
         setRedemptionHistory([
           {
@@ -165,6 +228,24 @@ export default function RewardsStore() {
     }
   }
 
+  // Add loading and error UI
+  if (loading) {
+    return (
+      <div className="text-center p-8 text-lg text-emerald-500 animate-pulse">
+        Loading your reward points...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-8 text-red-500 font-semibold">
+        Error: {error}
+        <p className="text-sm text-gray-600 mt-2">Could not load your points. Please try refreshing the page.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Points Balance Card */}
@@ -173,6 +254,7 @@ export default function RewardsStore() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-emerald-100 text-sm font-medium mb-2">Your Reward Points</p>
+              {/* This will now show the REAL points */}
               <p className="text-5xl font-bold">{userPoints.toLocaleString()}</p>
               <p className="text-emerald-100 text-sm mt-2">Available for redemption</p>
             </div>
@@ -191,21 +273,21 @@ export default function RewardsStore() {
         <Button
           onClick={() => setActiveTab("store")}
           className={`${activeTab === "store"
-              ? "bg-teal-500 hover:bg-teal-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            ? "bg-teal-500 hover:bg-teal-600 text-white"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
         >
-          🏪 Rewards Store
+          Rewards Store
         </Button>
 
         <Button
           onClick={() => setActiveTab("history")}
           className={`${activeTab === "history"
-              ? "bg-teal-500 hover:bg-teal-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            ? "bg-teal-500 hover:bg-teal-600 text-white"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
         >
-          📋 Redemption History
+          Redemption History
         </Button>
 
       </div>
@@ -294,13 +376,13 @@ export default function RewardsStore() {
                       onClick={() => handleRedeem(reward)}
                       disabled={!canRedeem || isRedeeming}
                       className={`w-full font-medium transition-all mt-4 ${canRedeem
-                          ? "bg-emerald-500 hover:bg-emerald-600 text-white"
-                          : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                        : "bg-gray-200 text-gray-500 cursor-not-allowed"
                         }`}
                     >
                       {isRedeeming ? (
                         <span className="flex items-center justify-center gap-2">
-                          <span className="animate-spin">⏳</span> Redeeming...
+                          <span className="animate-spin">...</span> Redeeming...
                         </span>
                       ) : !canRedeem ? (
                         `Need ${reward.pointsRequired - userPoints} more points`
@@ -320,7 +402,7 @@ export default function RewardsStore() {
             <CardContent className="p-5 flex gap-4">
               <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-900">
-                <p className="font-medium mb-1">💡 How it works:</p>
+                <p className="font-medium mb-1">How it works:</p>
                 <p>
                   Report waste issues and complete tasks to earn points. Redeem your points for real rewards from our
                   partner network. All rewards are processed within 24-48 hours.
@@ -359,10 +441,10 @@ export default function RewardsStore() {
                               : "outline"
                         }
                         className={`mt-2 ${record.status === "completed"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : record.status === "pending"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-gray-100 text-gray-700"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : record.status === "pending"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-gray-100 text-gray-700"
                           }`}
                       >
                         {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
@@ -386,8 +468,3 @@ export default function RewardsStore() {
     </div>
   )
 }
-
-
-
-
-

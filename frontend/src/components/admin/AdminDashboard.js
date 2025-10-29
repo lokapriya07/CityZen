@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 // --- Import the real components from their files ---
-import { CommunityEngagement } from "./CommunityEngagement";
+import {CommunityEngagement }from "./CommunityEngagement";
 import  WasteHeatmap from "./WasteHeatMap";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
-import { TaskAssignmentHub } from "./TaskAssignmentHub";
+import TaskAssignmentHub  from "./TaskAssignmentHub";
 import { WorkerPerformance } from "./WorkerPerformance";
 
 
