@@ -18,10 +18,10 @@ router.post("/send", protect, async (req, res) => {
       });
     }
 
-    // Verify task exists and user has access
+    // Verify task exists with better population
     const task = await Task.findById(taskId)
-      .populate("assignedWorker")
-      .populate("report");
+      .populate("assignedWorker", "name role avatar")
+      .populate("report", "createdBy location description");
 
     if (!task) {
       return res.status(404).json({
@@ -30,14 +30,35 @@ router.post("/send", protect, async (req, res) => {
       });
     }
 
-    // Determine receiver
-    let receiverId;
-    if (req.user.role === "citizen" || req.user.role === "user") {
-      receiverId = task.assignedWorker?._id;
+    // Enhanced access control
+    let hasAccess = false;
+
+    if (req.user.role === "admin") {
+      hasAccess = true;
+    } else if (req.user.role === "citizen" || req.user.role === "user") {
+      hasAccess = task.report?.createdBy?.toString() === req.user.id;
     } else if (req.user.role === "worker") {
-      receiverId = task.report?.createdBy;
-    } else {
-      receiverId = task.assignedWorker?._id;
+      hasAccess = task.assignedWorker?._id?.toString() === req.user.id;
+    }
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied to send message for this task",
+      });
+    }
+
+    // ✅ FIXED: Enhanced receiver determination
+    let receiverId;
+    const citizenId = task.report?.createdBy;
+    const workerId = task.assignedWorker?._id;
+
+    if (req.user.role === "citizen" || req.user.role === "user") {
+      receiverId = workerId;
+    } else if (req.user.role === "worker") {
+      receiverId = citizenId;
+    } else if (req.user.role === "admin") {
+      receiverId = workerId || citizenId;
     }
 
     if (!receiverId) {
