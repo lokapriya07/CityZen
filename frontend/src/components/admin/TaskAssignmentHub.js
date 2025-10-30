@@ -518,7 +518,6 @@
 //         </div>
 //     );
 // }
-
 import React, { useEffect, useState, useCallback } from "react";
 
 // --- UI Components ---
@@ -765,7 +764,7 @@ const AssignManuallyModal = ({ report, workersWithDistance, onClose, onAssign })
 
                 {/* This is the list container */}
                 <div className="max-h-64 overflow-y-auto space-y-3 pr-2">
-                    
+
                     {/* Handle case where the list is empty */}
                     {workersWithDistance.length === 0 && (
                         <p className="text-gray-500 text-center py-4">No workers found.</p>
@@ -784,16 +783,15 @@ const AssignManuallyModal = ({ report, workersWithDistance, onClose, onAssign })
                                 <div
                                     key={worker._id}
                                     onClick={canAssign ? () => onAssign(report._id, worker._id, worker.name) : undefined}
-                                    className={`flex justify-between items-center p-4 border border-gray-200 rounded-lg ${
-                                        canAssign 
-                                        ? 'hover:bg-gray-100 cursor-pointer' 
-                                        : 'opacity-60 bg-gray-50 cursor-not-allowed'
-                                    }`}
+                                    className={`flex justify-between items-center p-4 border border-gray-200 rounded-lg ${canAssign
+                                            ? 'hover:bg-gray-100 cursor-pointer'
+                                            : 'opacity-60 bg-gray-50 cursor-not-allowed'
+                                        }`}
                                     title={canAssign ? `Assign to ${worker.name}` : reason}
                                 >
                                     {/* This new div makes the left side a single "block" */}
                                     <div className="flex-1 overflow-hidden mr-3">
-                                        
+
                                         {/* This div now uses "truncate" to prevent wrapping */}
                                         <div className="truncate">
                                             <span className="font-medium text-gray-900">{worker.name}</span>
@@ -801,9 +799,8 @@ const AssignManuallyModal = ({ report, workersWithDistance, onClose, onAssign })
                                         </div>
 
                                         {/* Distance line */}
-                                        <p className={`text-sm font-medium ${
-                                            worker.distance !== null ? 'text-blue-600' : 'text-red-500'
-                                        }`}>
+                                        <p className={`text-sm font-medium ${worker.distance !== null ? 'text-blue-600' : 'text-red-500'
+                                            }`}>
                                             {worker.distance !== null
                                                 ? `Approx. ${worker.distance.toFixed(1)} km away`
                                                 : "Distance unavailable"
@@ -812,7 +809,7 @@ const AssignManuallyModal = ({ report, workersWithDistance, onClose, onAssign })
                                     </div>
 
                                     {/* The badge will always stay aligned to the right */}
-                                    <AvailabilityBadge isActive={worker.isActive} /> 
+                                    <AvailabilityBadge isActive={worker.isActive} />
                                 </div>
                             );
                         })}
@@ -984,6 +981,14 @@ export default function TaskAssignmentHub() {
             return;
         }
 
+        // =========================================================================
+        // ✅ START: DEBUG LOG
+        // =========================================================================
+        console.log("Workers list:", JSON.stringify(workers, null, 2));
+        // =========================================================================
+        // ✅ END: DEBUG LOG
+        // =========================================================================
+
         const reportLoc = reportToAssign.location?.coordinates; // [lng, lat]
 
         // Check if report location is valid (not null and not [0, 0])
@@ -994,10 +999,10 @@ export default function TaskAssignmentHub() {
                 const workerLoc = worker.workerDetails?.currentLocation;
 
                 // Check if worker location is valid
-                const isWorkerLocValid = workerLoc && 
-                                         typeof workerLoc.latitude === 'number' && 
-                                         typeof workerLoc.longitude === 'number' && 
-                                         (workerLoc.latitude !== 0 || workerLoc.longitude !== 0);
+                const isWorkerLocValid = workerLoc &&
+                    typeof workerLoc.latitude === 'number' &&
+                    typeof workerLoc.longitude === 'number' &&
+                    (workerLoc.latitude !== 0 || workerLoc.longitude !== 0);
 
                 // Only calculate distance if BOTH locations are valid
                 const distance = (isReportLocValid && isWorkerLocValid)
@@ -1012,6 +1017,13 @@ export default function TaskAssignmentHub() {
     }, [reportToAssign, workers]); // Runs when reportToAssign or workers list changes
 
     const handleOpenModal = (report) => {
+        // =========================================================================
+        // ✅ START: DEBUG LOG
+        // =========================================================================
+        console.log("Report to assign:", JSON.stringify(report, null, 2));
+        // =========================================================================
+        // ✅ END: DEBUG LOG
+        // =========================================================================
         setReportToAssign(report);
     };
 

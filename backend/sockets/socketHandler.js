@@ -349,6 +349,7 @@
 // };
 
 // module.exports = { initializeSocket };
+// socket.js
 
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
@@ -426,10 +427,8 @@ const initializeSocket = (io) => {
             user: socket.user,
         });
 
-        // ------------------------------------------------------------------
-        // ✅ FIXED JOIN TASK CHAT HANDLER - ENSURES BOTH SIDES JOIN
-        // ------------------------------------------------------------------
-        socket.on("join_task_chat", async ({ taskId }) => {
+        // ✅ FIXED JOIN TASK CHAT HANDLER - BETTER ACCESS CONTROL
+        socket.on("join_task_chat", async ({ taskId, userType }) => {
             try {
                 console.log(`💬 ${userName} (${userRole}) joining task chat: ${taskId}`);
 
@@ -446,12 +445,26 @@ const initializeSocket = (io) => {
                     return;
                 }
 
-                // ✅ FIX: Ensure both user and worker can access this task
-                const hasAccess =
-                    userRole === "admin" ||
-                    (userRole === "citizen" && task.report?.createdBy?.toString() === userId) ||
-                    (userRole === "user" && task.report?.createdBy?.toString() === userId) ||
-                    (userRole === "worker" && task.assignedWorker?._id?.toString() === userId);
+                // ✅ FIXED: Enhanced Access Control Logic
+                let hasAccess = false;
+
+                if (userRole === "admin") {
+                    hasAccess = true;
+                } else if (userRole === "citizen" || userRole === "user") {
+                    // Check if user is the report creator
+                    hasAccess = task.report?.createdBy?.toString() === userId;
+                } else if (userRole === "worker") {
+                    // Check if user is the assigned worker
+                    hasAccess = task.assignedWorker?._id?.toString() === userId;
+                }
+
+                console.log(`🔐 Access Check for ${userName}:`, {
+                    userRole,
+                    userId,
+                    reportCreator: task.report?.createdBy?.toString(),
+                    assignedWorker: task.assignedWorker?._id?.toString(),
+                    hasAccess
+                });
 
                 if (!hasAccess) {
                     console.log(`❌ Access denied for ${userName} to task ${taskId}`);
@@ -474,7 +487,7 @@ const initializeSocket = (io) => {
                     message: "Joined task chat successfully"
                 });
 
-                // ✅ FIXED: Get ALL messages for this task (no filtering by receiver)
+                // Get ALL messages for this task
                 const messages = await Message.find({ taskId })
                     .populate("sender", "name role avatar")
                     .sort({ createdAt: 1 })
@@ -503,7 +516,7 @@ const initializeSocket = (io) => {
                     }))
                 });
 
-                // ✅ Mark messages as read for this user
+                // Mark messages as read for this user
                 await Message.updateMany(
                     {
                         taskId,
@@ -525,22 +538,13 @@ const initializeSocket = (io) => {
             }
         });
 
-        // ------------------------------------------------------------------
-        // ✅ COMPLETELY FIXED SEND MESSAGE HANDLER
-        // ------------------------------------------------------------------
+        // ✅ FIXED SEND MESSAGE HANDLER - PROPER MESSAGE ROUTING
         socket.on("send_message", async (data, callback) => {
             try {
                 const { taskId, message, messageType = "text", location = null } = data;
 
-                console.log(`📤 [SEND_MESSAGE] ${userName} (${userRole}) sending to task ${taskId}:`, message);
-
-                // Validate input
                 if (!message || !taskId) {
-                    socket.emit("socket_error", {
-                        type: "socket_error",
-                        message: "Message and taskId are required"
-                    });
-                    return;
+                    throw new Error("Message and taskId are required");
                 }
 
                 // Find task and determine participants
@@ -549,14 +553,10 @@ const initializeSocket = (io) => {
                     .populate("report");
 
                 if (!task) {
-                    socket.emit("socket_error", {
-                        type: "socket_error",
-                        message: "Task not found"
-                    });
-                    return;
+                    throw new Error("Task not found");
                 }
 
-                // ✅ FIXED: Determine receiver based on sender role
+                // ✅ FIXED: Enhanced receiver determination
                 let receiverId;
                 const citizenId = task.report?.createdBy;
                 const workerId = task.assignedWorker?._id;
@@ -564,27 +564,19 @@ const initializeSocket = (io) => {
                 if (userRole === "citizen" || userRole === "user") {
                     // Citizen/User sends to assigned worker
                     receiverId = workerId;
-                    console.log(`👥 Citizen/User sending to worker: ${receiverId}`);
                 } else if (userRole === "worker") {
                     // Worker sends to report creator (citizen)
                     receiverId = citizenId;
-                    console.log(`👥 Worker sending to citizen: ${receiverId}`);
                 } else if (userRole === "admin") {
-                    // Admin can send to worker by default
-                    receiverId = workerId;
+                    // Admin can send to both, default to worker
+                    receiverId = workerId || citizenId;
                 }
 
-                // ✅ FIX: If no receiver found, use the other participant
                 if (!receiverId) {
-                    if (userRole === "citizen" || userRole === "user") {
-                        receiverId = citizenId; // Fallback
-                    } else {
-                        receiverId = workerId; // Fallback
-                    }
-                    console.log(`⚠️ Using fallback receiver: ${receiverId}`);
+                    throw new Error("No valid recipient found for this message.");
                 }
 
-                // ✅ Save message to database FIRST
+                // Save message to database FIRST
                 const newMessage = await Message.create({
                     taskId,
                     sender: socket.userId,
@@ -617,15 +609,10 @@ const initializeSocket = (io) => {
                     isRead: false,
                 };
 
-                console.log(`📢 Broadcasting message to room: task_chat:${taskId}`);
-
-                // ✅ FIXED: Broadcast ONLY to task room, not user rooms
-                // This prevents duplicates from multiple emission targets
+                // ✅ FIXED: Broadcast to ALL participants in the task room
                 io.to(`task_chat:${taskId}`).emit("new_message", messageData);
 
-                console.log(`✅ Message saved and broadcast successfully for task ${taskId}`);
-                console.log(`👥 Room members in task_chat:${taskId}:`,
-                    io.sockets.adapter.rooms.get(`task_chat:${taskId}`)?.size || 0);
+                console.log(`✅ Message saved and broadcast successfully for task ${taskId} from ${userName} to ${receiverId}`);
 
                 // Send acknowledgment to sender
                 if (callback) {
@@ -651,15 +638,13 @@ const initializeSocket = (io) => {
             }
         });
 
-        // ------------------------------------------------------------------
-        // ✅ MARK MESSAGES AS READ
-        // ------------------------------------------------------------------
+        // MARK MESSAGES AS READ
         socket.on("mark_messages_read", async ({ taskId }) => {
             try {
                 const result = await Message.updateMany(
                     {
                         taskId,
-                        receiver: socket.userId,
+                        receiver: userId,
                         isRead: false
                     },
                     {
@@ -678,7 +663,7 @@ const initializeSocket = (io) => {
         socket.on("get_unread_count", async () => {
             try {
                 const count = await Message.countDocuments({
-                    receiver: socket.userId,
+                    receiver: userId,
                     isRead: false
                 });
 
@@ -695,8 +680,8 @@ const initializeSocket = (io) => {
         socket.on("typing_start", ({ taskId }) => {
             socket.to(`task_chat:${taskId}`).emit("user_typing", {
                 type: "user_typing",
-                userId: socket.userId,
-                userName: socket.user?.name,
+                userId: userId,
+                userName: userName,
                 userRole: userRole,
             });
         });
@@ -704,7 +689,7 @@ const initializeSocket = (io) => {
         socket.on("typing_stop", ({ taskId }) => {
             socket.to(`task_chat:${taskId}`).emit("user_stopped_typing", {
                 type: "user_stopped_typing",
-                userId: socket.userId,
+                userId: userId,
             });
         });
 

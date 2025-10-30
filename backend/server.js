@@ -1,4 +1,3 @@
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -22,8 +21,8 @@ console.log("🚀 Starting server initialization...");
 // Middleware
 console.log("🔧 Setting up middleware...");
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001"], // Added worker frontend
-  credentials: true                // Allow cookies/credentials
+  origin: ["http://localhost:3000", "http://localhost:3001"],
+  credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -45,9 +44,13 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/worker", require("./routes/worker"));
 app.use("/api/notifications", require("./routes/notify"));
 const userRoutes = require("./routes/user");
-app.use("/api/users", userRoutes); 
+app.use("/api/users", userRoutes);
 
-// ✅ ADD THIS LINE - Message routes
+// ✅ PUBLIC ROUTES (NO AUTHENTICATION)
+const publicRoutes = require("./routes/public");
+app.use("/api", publicRoutes);
+
+// ✅ Message routes
 console.log("💬 Setting up message routes...");
 app.use("/api/messages", require("./routes/messages"));
 
@@ -57,7 +60,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:3001"], // Both frontends
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     methods: ["GET", "POST"],
     credentials: true
   },
@@ -66,11 +69,11 @@ const io = new Server(server, {
 // Add Socket.IO connection logging
 io.on("connection", (socket) => {
   console.log(`🔗 New client connected: ${socket.id}`);
-  
+
   socket.on("disconnect", (reason) => {
     console.log(`🔌 Client disconnected: ${socket.id}, Reason: ${reason}`);
   });
-  
+
   socket.on("error", (error) => {
     console.error(`❌ Socket error for ${socket.id}:`, error);
   });
@@ -86,12 +89,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add specific logging for message routes
-app.use("/api/messages", (req, res, next) => {
-  console.log(`💬 Message API call: ${req.method} ${req.path}`, {
-    body: req.body,
-    query: req.query,
-    params: req.params
+// Add specific logging for location routes
+app.use("/api/workers/:name/location", (req, res, next) => {
+  console.log(`📍 Location API call: ${req.method} ${req.path}`, {
+    worker: req.params.name
   });
   next();
 });
@@ -103,14 +104,13 @@ server.listen(PORT, () => {
   console.log("📋 Server startup completed successfully");
 });
 
-// FIXED: Graceful shutdown - corrected Mongoose connection close
-process.on('SIGINT', async () => {git 
+// Graceful shutdown
+process.on('SIGINT', async () => {
   console.log('🛑 Server shutting down gracefully...');
-  
+
   server.close(() => {
     console.log('✅ HTTP server closed.');
-    
-    // Fixed Mongoose connection close - no callback in newer versions
+
     mongoose.connection.close()
       .then(() => {
         console.log('✅ MongoDB connection closed.');

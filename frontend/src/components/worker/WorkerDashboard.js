@@ -1,19 +1,16 @@
 
+
 // export default WorkerDashboard;
-
-
-///-------------------------------
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ChevronUp, AlertTriangle } from "lucide-react";
+// ✅ ADDED Phone, X, and User icons
+import { ChevronUp, AlertTriangle, Phone, X, User } from "lucide-react";
 import TaskQueue from "./TaskQueue";
 import PerformanceTracker from "./PerformanceTracker";
 import ResourceHub from "./ResourceHub";
 import TaskCardSkeleton from "./TaskCardSkeleton";
-// ✅ ADDED Import
-//import { WorkerMessaging } from "../messaging/WorkerMessaging";
-import { EmergencyMessaging } from '../EmergencyMessaging';
+import { EmergencyMessaging } from "../EmergencyMessaging";
 
 // --- API Utility ---
 const fetchApi = async (url, method = "GET", body = null) => {
@@ -53,10 +50,12 @@ function WorkerDashboard() {
     pending: 0,
   });
 
-  // ✅ ADDED States
   const [selectedTask, setSelectedTask] = useState(null);
-  // ✅ REPLACED showMessaging with showChat
   const [showChat, setShowChat] = useState(false);
+
+  // ✅ ADDED: State for the call modal
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [selectedTaskForCall, setSelectedTaskForCall] = useState(null);
 
   const fetchAssignedTasks = useCallback(async () => {
     setLoading(true);
@@ -79,6 +78,8 @@ function WorkerDashboard() {
         assignedTime: t.createdAt || "N/A",
         dueTime: t.scheduledDate || "N/A",
         wasteType: t.report?.wasteType || "N/A",
+        // ✅ ADDED: Get the reporter's name and phone from the populated report
+        reporterName: t.report?.fullName || "N/A",
         supportNumber: t.report?.phone || "N/A",
       }));
 
@@ -122,10 +123,15 @@ function WorkerDashboard() {
     }
   };
 
-  // ✅ UPDATED Handler to use setShowChat
   const handleOpenChat = (task) => {
     setSelectedTask(task);
     setShowChat(true);
+  };
+
+  // ✅ ADDED: Handler to open the call modal
+  const handleOpenCallModal = (task) => {
+    setSelectedTaskForCall(task);
+    setShowCallModal(true);
   };
 
   const quickStats = [
@@ -144,9 +150,9 @@ function WorkerDashboard() {
       <div className="flex flex-col md:flex-row">
         <div
           className={`transition-all duration-300 
-          ${resourcesOpen ? "w-full md:w-80" : "w-full md:w-16"} 
-          border-b md:border-b-0 md:border-r border-gray-300 
-          bg-white flex flex-col`}
+           ${resourcesOpen ? "w-full md:w-80" : "w-full md:w-16"} 
+           border-b md:border-b-0 md:border-r border-gray-300 
+           bg-white flex flex-col`}
         >
           <div
             className={`p-4 ${
@@ -242,7 +248,9 @@ function WorkerDashboard() {
                 <TaskQueue
                   tasks={tasks}
                   onStatusUpdate={handleTaskStatusUpdate}
-                  onOpenChat={handleOpenChat} // ✅ This prop is correct
+                  onOpenChat={handleOpenChat}
+                  // ✅ ADDED: Pass the call handler to the TaskQueue
+                  onOpenCall={handleOpenCallModal}
                 />
               )}
             </>
@@ -251,18 +259,74 @@ function WorkerDashboard() {
         </main>
       </div>
 
-      {/* ✅ REPLACED Modal with new chat modal */}
+      {/* Chat Modal */}
       {showChat && (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg w-full max-w-2xl h-[80vh]">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl h-[80vh]">
             <EmergencyMessaging
-                userType="worker"
-                taskId={selectedTask?._id || selectedTask?.id}
-                onClose={() => setShowChat(false)}
+              userType="worker"
+              taskId={selectedTask?._id || selectedTask?.id}
+              onClose={() => setShowChat(false)}
             />
+          </div>
         </div>
-    </div>
-)}
+      )}
+
+      {/* ✅ ADDED: Call Reporter Modal */}
+      {showCallModal && selectedTaskForCall && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-sm p-6 shadow-xl transform transition-all">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-gray-800">
+                Contact Reporter
+              </h3>
+              <button
+                onClick={() => setShowCallModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Reporter Name */}
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0 bg-gray-100 rounded-full p-3">
+                  <User size={20} className="text-gray-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Name</p>
+                  <p className="text-lg font-medium text-gray-900">
+                    {selectedTaskForCall.reporterName}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Phone Number */}
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0 bg-gray-100 rounded-full p-3">
+                  <Phone size={20} className="text-gray-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Phone Number</p>
+                  <p className="text-lg font-medium text-gray-900">
+                    {selectedTaskForCall.supportNumber}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Call Button */}
+            <a
+              href={`tel:${selectedTaskForCall.supportNumber}`}
+              className="mt-6 w-full flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition duration-150 ease-in-out"
+            >
+              <Phone size={20} className="mr-2" />
+              Call Now
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -14,7 +14,7 @@ const getAuthToken = () => {
     return null;
 };
 
-// ✅ Message deduplication utility
+// Message deduplication utility
 const useMessageDeduplication = () => {
     const messageIds = useRef(new Set());
 
@@ -31,6 +31,35 @@ const useMessageDeduplication = () => {
     }, []);
 
     return { addMessageId, hasMessageId, clearMessageIds };
+};
+
+// ✅ ADDED: Persistent message storage for this component
+const MessageStorage = {
+    getMessages: (taskId) => {
+        try {
+            if (typeof window === 'undefined') return [];
+            const key = `chat_messages_${taskId}`;
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            console.error('Error loading messages from storage:', error);
+            return [];
+        }
+    },
+
+    saveMessages: (taskId, messages) => {
+        try {
+            if (typeof window === 'undefined') return;
+            const key = `chat_messages_${taskId}`;
+
+            // Filter out optimistic messages before saving
+            const messagesToSave = messages.filter(msg => !msg.isOptimistic);
+
+            localStorage.setItem(key, JSON.stringify(messagesToSave));
+        } catch (error) {
+            console.error('Error saving messages to storage:', error);
+        }
+    }
 };
 
 export function EmergencyMessaging({
@@ -54,34 +83,44 @@ export function EmergencyMessaging({
     const messagesEndRef = useRef(null);
     const { addMessageId, hasMessageId, clearMessageIds } = useMessageDeduplication();
 
-    // ✅ FIXED: Reset when taskId changes
+    // ✅ FIXED: Reset state when taskId changes
     useEffect(() => {
         clearMessageIds();
-        setMessages([]);
         setHasJoinedRoom(false);
-    }, [taskId, clearMessageIds]);
 
-    // ✅ FIXED: Initialize with provided history
+        // Load messages from persistent storage
+        if (taskId) {
+            const storedMessages = MessageStorage.getMessages(taskId);
+            setMessages(storedMessages);
+            storedMessages.forEach(msg => addMessageId(msg.id));
+        }
+    }, [taskId, clearMessageIds, addMessageId]);
+
+    // ✅ FIXED: Enhanced message loading from parent
     useEffect(() => {
-        if (messageHistory && messageHistory.length > 0 && taskId) {
+        if (messageHistory && taskId) {
             console.log("📚 Initializing with message history:", messageHistory.length);
-            const formatted = messageHistory.map(m => formatMessage(m));
 
-            // Filter duplicates
-            const uniqueMessages = formatted.filter(msg => !hasMessageId(msg.id));
-            uniqueMessages.forEach(msg => addMessageId(msg.id));
+            // Filter out any failed optimistic messages from history
+            const cleanHistory = messageHistory.filter(msg => !msg.failed);
 
-            setMessages(uniqueMessages);
+            setMessages(cleanHistory);
+            cleanHistory.forEach(msg => addMessageId(msg.id));
+
             scrollToBottom();
         }
-    }, [messageHistory, taskId, addMessageId, hasMessageId]);
+    }, [messageHistory, taskId, addMessageId]);
 
-    // ✅ FIXED: Socket initialization with proper cleanup
+    // ✅ FIXED: Enhanced socket initialization with better error handling
     useEffect(() => {
         const token = getAuthToken();
         if (!token || !taskId) {
             setConnectionStatus("No token or task");
             return;
+        }
+
+        if (socketRef.current) {
+            socketRef.current.disconnect();
         }
 
         console.log("🔌 Initializing socket connection...");
@@ -102,8 +141,6 @@ export function EmergencyMessaging({
             console.log("✅ Socket connected");
             setIsConnected(true);
             setConnectionStatus("Connected");
-
-            // Join task room immediately after connection
             console.log(`🚪 Joining task chat: ${taskId}`);
             socket.emit("join_task_chat", { taskId, userType });
         };
@@ -125,48 +162,42 @@ export function EmergencyMessaging({
             setHasJoinedRoom(true);
         };
 
-        // ✅ FIXED: Message history handler with duplicate prevention
+        // History handler: Used only for initial load from DB
         const handleMessageHistory = (payload) => {
             if (payload?.taskId !== taskId) return;
-
             console.log("📨 Received message history:", payload.messages?.length, "messages");
 
+            // Mark this batch as history when sending to parent
             const formatted = (payload.messages || []).map(m => formatMessage(m));
+            formatted.forEach(msg => addMessageId(msg.id));
 
-            // Filter out duplicates
-            const uniqueMessages = formatted.filter(msg => !hasMessageId(msg.id));
-
-            // Add new IDs to tracking set
-            uniqueMessages.forEach(msg => addMessageId(msg.id));
+            // Update both parent and local state
+            formatted.forEach(msg => onNewMessage && onNewMessage(taskId, msg, true));
 
             setMessages(prev => {
-                // Merge and sort messages
-                const allMessages = [...prev, ...uniqueMessages];
+                const allMessages = [...prev.filter(m => m.isOptimistic), ...formatted];
                 const unique = allMessages.filter((msg, index, self) =>
                     index === self.findIndex(m => m.id === msg.id)
-                );
+                ).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-                return unique.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                // ✅ PERSIST to localStorage
+                MessageStorage.saveMessages(taskId, unique);
+
+                return unique;
             });
 
             scrollToBottom();
-
-            // Mark messages as read
             socket.emit("mark_messages_read", { taskId });
         };
 
-        // ✅ FIXED: New message handler with strict duplicate prevention
+        // ✅ FIXED: Enhanced new message handler with proper routing
         const handleNewMessage = (msg) => {
             if (!msg || msg.taskId !== taskId) {
-                console.log("⚠️ Ignoring message for different task");
                 return;
             }
 
-            console.log("📩 Received new message:", msg.id);
-
-            // Strict duplicate check
             if (hasMessageId(msg.id)) {
-                console.log("🔄 Duplicate message detected, ignoring:", msg.id);
+                console.log("🔄 Skipping duplicate message:", msg.id);
                 return;
             }
 
@@ -174,29 +205,29 @@ export function EmergencyMessaging({
             addMessageId(formatted.id);
 
             setMessages(prev => {
-                // Remove any optimistic message with same content
+                // Remove the matching optimistic message 
                 const filtered = prev.filter(m =>
-                    !m.isOptimistic ||
-                    (m.isOptimistic && m.message !== formatted.message)
+                    m.message !== formatted.message || m.isOptimistic === false
                 );
 
                 const newMessages = [...filtered, formatted];
-                return newMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                const sortedMessages = newMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+                // ✅ PERSIST to localStorage
+                MessageStorage.saveMessages(taskId, sortedMessages);
+
+                return sortedMessages;
             });
 
-            // Call parent handler
+            // ✅ Call parent handler to update global state
             onNewMessage && onNewMessage(taskId, formatted);
             scrollToBottom();
-
-            // Mark as read
             socket.emit("mark_messages_read", { taskId });
         };
 
         const handleSocketError = (payload) => {
             console.error("Socket error:", payload);
-            if (payload.message) {
-                alert(`Chat Error: ${payload.message}`);
-            }
+            setConnectionStatus(`Error: ${payload.message}`);
         };
 
         // Register event listeners
@@ -210,8 +241,6 @@ export function EmergencyMessaging({
 
         return () => {
             console.log("🧹 Cleaning up socket connection");
-
-            // Remove all listeners
             socket.off("connect", handleConnect);
             socket.off("disconnect", handleDisconnect);
             socket.off("connect_error", handleConnectError);
@@ -219,7 +248,6 @@ export function EmergencyMessaging({
             socket.off("message_history", handleMessageHistory);
             socket.off("new_message", handleNewMessage);
             socket.off("socket_error", handleSocketError);
-
             socket.disconnect();
             socketRef.current = null;
         };
@@ -247,7 +275,9 @@ export function EmergencyMessaging({
 
     const formatMessage = (msg) => {
         const currentUserId = getCurrentUserId();
-        const isSelf = msg.sender?.id === currentUserId;
+        const isSelf = msg.sender?.id === currentUserId ||
+            msg.sender?._id === currentUserId ||
+            msg.sender?.name === 'You';
 
         return {
             id: msg.id || msg._id || `optimistic_${Date.now()}_${Math.random()}`,
@@ -267,7 +297,7 @@ export function EmergencyMessaging({
         };
     };
 
-    // ✅ FIXED: Send message with robust error handling
+    // ✅ FIXED: Enhanced message sending with better error handling
     const handleSendMessage = async () => {
         const text = inputMessage.trim();
         if (!text || !taskId || !hasJoinedRoom) return;
@@ -286,14 +316,15 @@ export function EmergencyMessaging({
             isOptimistic: true
         });
 
-        // Add to tracking set
+        // ✅ IMMEDIATELY update both local and parent state
         addMessageId(optimisticId);
-
-        // Update UI optimistically
         setMessages(prev => {
             const newMessages = [...prev, optimisticMsg];
-            return newMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            MessageStorage.saveMessages(taskId, newMessages);
+            return newMessages;
         });
+        onNewMessage && onNewMessage(taskId, optimisticMsg);
+
         setInputMessage("");
         setIsSending(true);
         scrollToBottom();
@@ -302,21 +333,28 @@ export function EmergencyMessaging({
 
         try {
             if (socket && socket.connected) {
-                // Send via socket with acknowledgment
                 socket.emit("send_message",
                     { taskId, message: text, messageType: "text" },
                     (ack) => {
                         if (ack && ack.success) {
                             console.log("✅ Message sent successfully via socket");
-                            // The actual message will come via "new_message" event
+
+                            // ✅ Remove optimistic message since real one will come via socket
+                            setTimeout(() => {
+                                setMessages(prev => {
+                                    const filtered = prev.filter(msg => msg.id !== optimisticId);
+                                    MessageStorage.saveMessages(taskId, filtered);
+                                    return filtered;
+                                });
+                            }, 1000);
+
                         } else {
                             throw new Error(ack?.error || "Socket send failed");
                         }
                     }
                 );
             } else {
-                // Fallback to REST API
-                console.log("🔄 Socket not connected, using REST fallback");
+                // REST Fallback
                 const token = getAuthToken();
                 const res = await fetch(`/api/messages/send`, {
                     method: "POST",
@@ -332,18 +370,42 @@ export function EmergencyMessaging({
                     throw new Error(data.message || "REST send failed");
                 }
 
+                // ✅ Replace optimistic message with real one
+                const finalMsg = formatMessage(data.data);
+                onNewMessage && onNewMessage(taskId, finalMsg);
+
+                // Remove optimistic message from local state
+                setMessages(prev => {
+                    const filtered = prev.filter(msg => msg.id !== optimisticId);
+                    const newMessages = [...filtered, finalMsg];
+                    MessageStorage.saveMessages(taskId, newMessages);
+                    return newMessages;
+                });
+
                 console.log("✅ Message sent successfully via REST");
             }
         } catch (err) {
-            console.error("❌ Send message error:", err);
-            // Mark optimistic message as failed
-            setMessages(prev =>
-                prev.map(m =>
+            console.error("❌ Message send error:", err);
+
+            // ✅ Mark optimistic message as failed in both local and parent state
+            const failedMsg = {
+                ...optimisticMsg,
+                failed: true,
+                isOptimistic: false,
+                error: err.message
+            };
+
+            onNewMessage && onNewMessage(taskId, failedMsg);
+
+            setMessages(prev => {
+                const updated = prev.map(m =>
                     m.id === optimisticId
-                        ? { ...m, failed: true }
+                        ? { ...m, failed: true, isOptimistic: false, error: err.message }
                         : m
-                )
-            );
+                );
+                MessageStorage.saveMessages(taskId, updated);
+                return updated;
+            });
         } finally {
             setIsSending(false);
         }
@@ -376,10 +438,10 @@ export function EmergencyMessaging({
                     <h3 className="text-lg font-semibold text-gray-900 capitalize">{partnerName}</h3>
                     <p className="text-xs text-gray-500 flex items-center gap-2">
                         <span className={`inline-block w-2 h-2 rounded-full ${isConnected && hasJoinedRoom ? 'bg-green-500' :
-                                isConnected ? 'bg-yellow-500' : 'bg-red-500'
+                            isConnected ? 'bg-yellow-500' : 'bg-red-500'
                             }`}></span>
                         {isConnected && hasJoinedRoom ? 'Connected' :
-                            isConnected ? 'Connecting to chat...' : 'Disconnected'}
+                            isConnected ? 'Connecting to chat...' : connectionStatus}
                         <span className="ml-2">| {messages.length} messages</span>
                     </p>
                 </div>
@@ -406,7 +468,7 @@ export function EmergencyMessaging({
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 min-h-0">
-                {messages.length === 0 ? (
+                {messages.length === 0 && hasJoinedRoom ? (
                     <div className="text-center text-gray-500 pt-10">
                         <div className="text-2xl mb-2">💬</div>
                         <p className="font-medium">No messages yet</p>
@@ -425,8 +487,8 @@ export function EmergencyMessaging({
                                 className={`flex ${message.sender.name === 'You' ? 'justify-end' : 'justify-start'}`}
                             >
                                 <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl text-sm shadow-sm ${message.sender.name === 'You'
-                                        ? 'bg-blue-600 text-white rounded-br-none'
-                                        : 'bg-white text-gray-800 rounded-tl-none border border-gray-200'
+                                    ? 'bg-blue-600 text-white rounded-br-none'
+                                    : 'bg-white text-gray-800 rounded-tl-none border border-gray-200'
                                     } ${message.isOptimistic ? 'opacity-70' : ''} ${message.failed ? 'border border-red-300 bg-red-50 text-red-800' : ''
                                     }`}>
                                     {message.sender.name !== 'You' && (
