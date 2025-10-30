@@ -184,7 +184,6 @@
 //     );
 // }
 
-// src/components/EmergencyMessaging.js - UPDATED VERSION
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './citizen/ui/card';
 import { Button } from './citizen/ui/button';
@@ -193,7 +192,7 @@ import { Input } from './citizen/ui/input';
 import { Send, X } from 'lucide-react';
 import io from 'socket.io-client';
 
-export function EmergencyMessaging({ userType, taskId, worker, task, onClose }) {
+export function EmergencyMessaging({ userType, taskId, worker, onClose }) {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [isConnected, setIsConnected] = useState(false);
@@ -238,28 +237,34 @@ export function EmergencyMessaging({ userType, taskId, worker, task, onClose }) 
             console.error('❌ Connection error:', error);
         });
 
-        // Listen for messages
+        // Listen for ALL socket events with detailed logging
         newSocket.on('new_message', (data) => {
-            console.log('💬 NEW MESSAGE RECEIVED:', data);
+            console.log('💬 [FRONTEND] NEW MESSAGE RECEIVED:', data);
             setMessages(prev => [...prev, data]);
         });
 
         newSocket.on('message_history', (data) => {
-            console.log('📚 MESSAGE HISTORY:', data.messages);
+            console.log('📚 [FRONTEND] MESSAGE HISTORY:', data.messages?.length, 'messages');
             setMessages(data.messages || []);
         });
 
         newSocket.on('joined_task_chat', (data) => {
-            console.log('✅ JOINED CHAT:', data);
+            console.log('✅ [FRONTEND] JOINED CHAT:', data);
         });
 
         newSocket.on('socket_error', (error) => {
-            console.error('❌ SOCKET ERROR:', error);
+            console.error('❌ [FRONTEND] SOCKET ERROR:', error);
+        });
+
+        // Log any other events
+        newSocket.onAny((eventName, ...args) => {
+            console.log(`🔍 [FRONTEND] SOCKET EVENT [${eventName}]:`, args[0]);
         });
 
         setSocket(newSocket);
 
         return () => {
+            console.log('🔌 Cleaning up socket connection');
             newSocket.disconnect();
         };
     }, []);
@@ -267,7 +272,7 @@ export function EmergencyMessaging({ userType, taskId, worker, task, onClose }) 
     // Join task chat when socket is connected
     useEffect(() => {
         if (socket && isConnected && taskId) {
-            console.log('🚪 Joining task chat:', taskId);
+            console.log('🚪 [FRONTEND] Joining task chat:', taskId);
             socket.emit('join_task_chat', { taskId });
         }
     }, [socket, isConnected, taskId]);
@@ -275,7 +280,7 @@ export function EmergencyMessaging({ userType, taskId, worker, task, onClose }) 
     const handleSendMessage = () => {
         if (!newMessage.trim()) return;
 
-        console.log("📤 SENDING DYNAMIC MESSAGE:", newMessage);
+        console.log("📤 [FRONTEND] SENDING MESSAGE:", newMessage);
 
         // Create temporary message
         const tempMessage = {
@@ -296,20 +301,19 @@ export function EmergencyMessaging({ userType, taskId, worker, task, onClose }) 
         const messageToSend = newMessage.trim();
         setNewMessage("");
 
-        // Send via socket if connected
+        // Send via socket
         if (socket && isConnected) {
-            console.log('📤 Emitting send_message via socket');
+            console.log('📤 [FRONTEND] Emitting send_message via socket');
             socket.emit('send_message', {
                 taskId: taskId,
                 message: messageToSend,
                 messageType: 'text'
             });
         } else {
-            console.log('📤 Sending via API fallback');
-            sendMessageViaAPI(messageToSend, taskId);
+            console.error('❌ [FRONTEND] Socket not connected, cannot send message');
         }
 
-        // Remove temp status after a delay
+        // Remove temp status after a delay (will be replaced by real message)
         setTimeout(() => {
             setMessages(prev => 
                 prev.map(msg => 
@@ -319,30 +323,6 @@ export function EmergencyMessaging({ userType, taskId, worker, task, onClose }) 
                 )
             );
         }, 3000);
-    };
-
-    const sendMessageViaAPI = async (message, taskId) => {
-        try {
-            const token = localStorage.getItem('authToken') || localStorage.getItem('workerToken');
-            const response = await fetch(`http://localhost:8001/api/messages`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    taskId: taskId,
-                    message: message,
-                    messageType: 'text'
-                })
-            });
-            
-            if (response.ok) {
-                console.log('✅ Message saved via API');
-            }
-        } catch (error) {
-            console.error('❌ API message save failed:', error);
-        }
     };
 
     const handleKeyPress = (e) => {
@@ -362,24 +342,18 @@ export function EmergencyMessaging({ userType, taskId, worker, task, onClose }) 
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
-    const isMyMessage = (senderId) => senderId === userType;
+    const isMyMessage = (senderId) => {
+        // For citizen: check if sender is citizen
+        // For worker: check if sender is worker  
+        return senderId === userType;
+    };
 
-    // ✅ FIXED: Get the correct user info based on component usage
     const getOtherUserName = () => {
-        if (userType === 'citizen') {
-            return worker?.name || "Worker";
-        } else {
-            // For worker, we need to get citizen name from task/report
-            return task?.report?.createdBy?.name || "Citizen";
-        }
+        return userType === 'citizen' ? (worker?.name || "Worker") : "Citizen";
     };
 
     const getOtherUserAvatar = () => {
-        if (userType === 'citizen') {
-            return worker?.avatar;
-        } else {
-            return task?.report?.createdBy?.avatar;
-        }
+        return userType === 'citizen' ? worker?.avatar : null;
     };
 
     return (
@@ -394,7 +368,7 @@ export function EmergencyMessaging({ userType, taskId, worker, task, onClose }) 
                         <CardTitle className="text-lg">{getOtherUserName()}</CardTitle>
                         <p className="text-sm text-gray-500 flex items-center">
                             <span className={`w-2 h-2 rounded-full mr-2 ${isConnected ? "bg-green-500" : "bg-red-500"}`}></span>
-                            {isConnected ? `Online (Dynamic)` : "Offline - Using API"}
+                            {isConnected ? `Online (${socket?.id})` : "Offline"}
                         </p>
                     </div>
                 </div>
@@ -407,7 +381,7 @@ export function EmergencyMessaging({ userType, taskId, worker, task, onClose }) 
                 {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-32 text-gray-500">
                         <p>No messages yet. Start a conversation!</p>
-                        <p className="text-xs mt-2">Connection: {isConnected ? '✅ Socket.IO' : '📡 API Fallback'}</p>
+                        <p className="text-xs mt-2">Status: {isConnected ? '✅ Connected' : '❌ Disconnected'}</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -437,18 +411,19 @@ export function EmergencyMessaging({ userType, taskId, worker, task, onClose }) 
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={handleKeyPress}
-                        placeholder={isConnected ? "Type your message (Live)..." : "Type your message (API)..."}
+                        placeholder={isConnected ? "Type your message..." : "Connecting..."}
+                        disabled={!isConnected}
                         className="flex-1"
                     />
                     <Button 
                         onClick={handleSendMessage} 
-                        disabled={!newMessage.trim()}
+                        disabled={!newMessage.trim() || !isConnected}
                     >
                         <Send className="h-4 w-4" />
                     </Button>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                    Mode: {isConnected ? '🟢 Real-time (Socket.IO)' : '🟡 Fallback (API)'}
+                    {isConnected ? '🟢 Real-time messaging active' : '🔴 Waiting for connection'}
                 </p>
             </div>
         </div>
