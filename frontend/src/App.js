@@ -12,7 +12,7 @@ import CitizenDashboard from "./components/citizen/CitizenDashboard";
 import ReportForm from "./components/citizen/report-form";
 import UploadImage from './components/UploadImage';
 import { AuthProvider } from './components/context/AuthContext';
-
+import LearnMore from './components/learnmore';
 import 'leaflet/dist/leaflet.css';
 // This path is corrected to './components/home/Footer'
 
@@ -31,6 +31,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginForm />} />
               <Route path="/signup" element={<SignupForm />} />
+              <Route path="/learn-more" element={<LearnMore />} />
               <Route path="/report-issue" element={<UploadImage />} />
               <Route path="/citizen" element={<CitizenDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
