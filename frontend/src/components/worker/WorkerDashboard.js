@@ -1,3 +1,752 @@
+// // // // "use client";
+
+// // // // import React, { useState, useEffect, useCallback } from "react";
+// // // // import { ChevronUp, AlertTriangle } from "lucide-react";
+// // // // import TaskQueue from "./TaskQueue";
+// // // // import PerformanceTracker from "./PerformanceTracker";
+// // // // import ResourceHub from "./ResourceHub";
+// // // // import TaskCardSkeleton from "./TaskCardSkeleton";
+
+// // // // // --- API Utility ---
+// // // // const fetchApi = async (url, method = "GET", body = null) => {
+// // // //   const token = localStorage.getItem("workerToken");
+// // // //   if (!token) throw new Error("No auth token found. Please login.");
+
+// // // //   const headers = {
+// // // //     "Content-Type": "application/json",
+// // // //     Authorization: `Bearer ${token}`,
+// // // //   };
+// // // //   const config = { method, headers };
+// // // //   if (body) config.body = JSON.stringify(body);
+// // // //   const finalUrl = url.startsWith("/") && !url.startsWith("//") ? `http://localhost:8001${url}` : url;
+// // // //   const response = await fetch(finalUrl, config);
+// // // //   if (!response.ok) {
+// // // //     const errorData = await response.json().catch(() => ({}));
+// // // //     throw new Error(`API Error ${response.status}: ${errorData.msg || response.statusText}`);
+// // // //   }
+// // // //   return response.json();
+// // // // };
+
+// // // // function WorkerDashboard() {
+// // // //   const [activeView, setActiveView] = useState("tasks");
+// // // //   const [resourcesOpen, setResourcesOpen] = useState(false);
+// // // //   const [tasks, setTasks] = useState([]);
+// // // //   const [loading, setLoading] = useState(true);
+// // // //   const [error, setError] = useState(null);
+// // // //   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, inProgress: 0, pending: 0 });
+
+// // // //   const fetchAssignedTasks = useCallback(async () => {
+// // // //     setLoading(true);
+// // // //     setError(null);
+// // // //     try {
+// // // //       const res = await fetchApi("/api/worker/tasks");
+// // // //       const rawTasks = res.data?.tasks || res.tasks || [];
+      
+// // // //       const mappedTasks = rawTasks.map((t, index) => ({
+// // // //         displayId: `W${(index + 1).toString().padStart(3, "0")}`,
+// // // //         id: t._id,
+// // // //         title: t.title,
+// // // //         location: t.location?.address || "N/A",
+// // // //         lat: t.location?.coordinates?.lat || 0,
+// // // //         lng: t.location?.coordinates?.lng || 0,
+// // // //         priority: t.priority,
+// // // //         description: t.description || "",
+// // // //         status: t.status || "pending",
+// // // //         estimatedTime: t.estimatedDuration || "N/A",
+// // // //         assignedTime: t.createdAt || "N/A",
+// // // //         dueTime: t.scheduledDate || "N/A",
+// // // //         wasteType: t.report?.wasteType || "N/A",
+// // // //         supportNumber: t.report?.phone || "N/A",
+// // // //       }));
+      
+// // // //       const visibleTasks = mappedTasks.filter((t) => t.status !== "completed");
+// // // //       setTasks(visibleTasks);
+
+// // // //       setTaskStats({
+// // // //         total: mappedTasks.length,
+// // // //         completed: mappedTasks.filter((t) => t.status === "completed").length,
+// // // //         inProgress: mappedTasks.filter((t) => t.status === "in-progress").length,
+// // // //         pending: mappedTasks.filter((t) => ["pending", "assigned", "accepted", "on-the-way"].includes(t.status)).length,
+// // // //       });
+
+// // // //     } catch (err) {
+// // // //       setError(err.message);
+// // // //     } finally {
+// // // //       setLoading(false);
+// // // //     }
+// // // //   }, []);
+
+// // // //   useEffect(() => {
+// // // //     const token = localStorage.getItem("workerToken");
+// // // //     if (!token) {
+// // // //       alert("Please login first.");
+// // // //       window.location.href = "/login";
+// // // //       return;
+// // // //     }
+// // // //     fetchAssignedTasks();
+// // // //   }, [fetchAssignedTasks]);
+
+// // // //   const handleTaskStatusUpdate = async (taskId, newStatus) => {
+// // // //     try {
+// // // //       await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", { status: newStatus });
+// // // //       fetchAssignedTasks(); // Refetch all tasks to get the latest state
+// // // //     } catch (err) {
+// // // //       alert("Failed to update task status: " + err.message);
+// // // //     }
+// // // //   };
+
+// // // //   const quickStats = [
+// // // //     { label: "Today's Tasks", value: taskStats.total, color: "text-blue-600" },
+// // // //     { label: "Completed", value: taskStats.completed, color: "text-green-600" },
+// // // //     { label: "In Progress", value: taskStats.inProgress, color: "text-orange-500" },
+// // // //     { label: "Pending", value: taskStats.pending, color: "text-yellow-600" },
+// // // //   ];
+
+// // // //   return (
+// // // //     <div className="min-h-screen bg-gray-50">
+// // // //       <div className="flex">
+// // // //         <div className={`transition-all duration-300 ${resourcesOpen ? "w-80" : "w-16"} border-r border-gray-300`}>
+// // // //           <div className="p-4">
+// // // //             <button className="w-full flex justify-between items-center p-2 bg-gray-100 rounded hover:bg-gray-200" onClick={() => setResourcesOpen(!resourcesOpen)}>
+// // // //               {resourcesOpen ? ( <><span className="font-semibold">Resources</span><ChevronUp className="h-4 w-4" /></> ) : ( <AlertTriangle className="h-4 w-4" /> )}
+// // // //             </button>
+// // // //             {resourcesOpen && <div className="mt-4"><ResourceHub /></div>}
+// // // //           </div>
+// // // //         </div>
+
+// // // //         <main className="flex-1 p-6">
+// // // //           <div className="mb-6">
+// // // //             <h1 className="text-3xl font-bold mb-2">Smart Taskboard</h1>
+// // // //             <p className="text-gray-600">Manage your waste collection tasks efficiently</p>
+// // // //           </div>
+
+// // // //           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+// // // //             {quickStats.map((stat, i) => (
+// // // //               <div key={i} className="bg-white shadow rounded p-4 flex flex-col items-center">
+// // // //                 <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+// // // //                 <div className="text-sm text-gray-500">{stat.label}</div>
+// // // //               </div>
+// // // //             ))}
+// // // //           </div>
+
+// // // //           <div className="flex gap-2 mb-6">
+// // // //             <button className={`px-4 py-2 rounded ${activeView === "tasks" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("tasks")}>My Tasks</button>
+// // // //             <button className={`px-4 py-2 rounded ${activeView === "performance" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("performance")}>Performance</button>
+// // // //           </div>
+
+// // // //           {activeView === "tasks" && (
+// // // //             <>
+// // // //               {loading && (
+// // // //                 <div className="space-y-6">
+// // // //                   <TaskCardSkeleton />
+// // // //                   <TaskCardSkeleton />
+// // // //                 </div>
+// // // //               )}
+// // // //               {error && <div className="text-center p-8 text-red-600">{error}</div>}
+// // // //               {!loading && !error && (
+// // // //                 <TaskQueue tasks={tasks} onStatusUpdate={handleTaskStatusUpdate} />
+// // // //               )}
+// // // //             </>
+// // // //           )}
+// // // //           {activeView === "performance" && <PerformanceTracker />}
+// // // //         </main>
+// // // //       </div>
+// // // //     </div>
+// // // //   );
+// // // // }
+
+// // // // export default WorkerDashboard;
+
+
+// // // // "use client";
+
+// // // // import React, { useState, useEffect, useCallback } from "react";
+// // // // import { ChevronUp, AlertTriangle } from "lucide-react";
+// // // // import TaskQueue from "./TaskQueue";
+// // // // import PerformanceTracker from "./PerformanceTracker";
+// // // // import ResourceHub from "./ResourceHub";
+// // // // import TaskCardSkeleton from "./TaskCardSkeleton";
+
+// // // // // --- API Utility ---
+// // // // const fetchApi = async (url, method = "GET", body = null) => {
+// // // //   const token = localStorage.getItem("workerToken");
+// // // //   if (!token) throw new Error("No auth token found. Please login.");
+
+// // // //   const headers = {
+// // // //     "Content-Type": "application/json",
+// // // //     Authorization: `Bearer ${token}`,
+// // // //   };
+// // // //   const config = { method, headers };
+// // // //   if (body) config.body = JSON.stringify(body);
+// // // //   const finalUrl = url.startsWith("/") && !url.startsWith("//") ? `http://localhost:8001${url}` : url;
+// // // //   const response = await fetch(finalUrl, config);
+// // // //   if (!response.ok) {
+// // // //     const errorData = await response.json().catch(() => ({}));
+// // // //     throw new Error(`API Error ${response.status}: ${errorData.msg || response.statusText}`);
+// // // //   }
+// // // //   return response.json();
+// // // // };
+
+// // // // function WorkerDashboard() {
+// // // //   const [activeView, setActiveView] = useState("tasks");
+// // // //   const [resourcesOpen, setResourcesOpen] = useState(false);
+// // // //   const [tasks, setTasks] = useState([]);
+// // // //   const [loading, setLoading] = useState(true);
+// // // //   const [error, setError] = useState(null);
+// // // //   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, inProgress: 0, pending: 0 });
+
+// // // //   const fetchAssignedTasks = useCallback(async () => {
+// // // //     setLoading(true);
+// // // //     setError(null);
+// // // //     try {
+// // // //       const res = await fetchApi("/api/worker/tasks");
+// // // //       const rawTasks = res.data?.tasks || res.tasks || [];
+
+// // // //       const mappedTasks = rawTasks.map((t, index) => ({
+// // // //         displayId: `W${(index + 1).toString().padStart(3, "0")}`,
+// // // //         id: t._id,
+// // // //         title: t.title,
+// // // //         location: t.location?.address || "N/A",
+// // // //         lat: t.location?.coordinates?.lat || 0,
+// // // //         lng: t.location?.coordinates?.lng || 0,
+// // // //         priority: t.priority,
+// // // //         description: t.description || "",
+// // // //         status: t.status || "pending",
+// // // //         estimatedTime: t.estimatedDuration || "N/A",
+// // // //         assignedTime: t.createdAt || "N/A",
+// // // //         dueTime: t.scheduledDate || "N/A",
+// // // //         wasteType: t.report?.wasteType || "N/A",
+// // // //         supportNumber: t.report?.phone || "N/A",
+// // // //       }));
+
+// // // //       const visibleTasks = mappedTasks.filter((t) => t.status !== "completed");
+// // // //       setTasks(visibleTasks);
+
+// // // //       setTaskStats({
+// // // //         total: mappedTasks.length,
+// // // //         completed: mappedTasks.filter((t) => t.status === "completed").length,
+// // // //         inProgress: mappedTasks.filter((t) => t.status === "in-progress").length,
+// // // //         pending: mappedTasks.filter((t) => ["pending", "assigned", "accepted", "on-the-way"].includes(t.status)).length,
+// // // //       });
+
+// // // //     } catch (err) {
+// // // //       setError(err.message);
+// // // //     } finally {
+// // // //       setLoading(false);
+// // // //     }
+// // // //   }, []);
+
+// // // //   useEffect(() => {
+// // // //     const token = localStorage.getItem("workerToken");
+// // // //     if (!token) {
+// // // //       alert("Please login first.");
+// // // //       window.location.href = "/login";
+// // // //       return;
+// // // //     }
+// // // //     fetchAssignedTasks();
+// // // //   }, [fetchAssignedTasks]);
+
+// // // //   const handleTaskStatusUpdate = async (taskId, newStatus) => {
+// // // //     try {
+// // // //       await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", { status: newStatus });
+// // // //       fetchAssignedTasks(); // Refetch all tasks to get the latest state
+// // // //     } catch (err) {
+// // // //       alert("Failed to update task status: " + err.message);
+// // // //     }
+// // // //   };
+
+// // // //   const quickStats = [
+// // // //     { label: "Today's Tasks", value: taskStats.total, color: "text-blue-600" },
+// // // //     { label: "Completed", value: taskStats.completed, color: "text-green-600" },
+// // // //     { label: "In Progress", value: taskStats.inProgress, color: "text-orange-500" },
+// // // //     { label: "Pending", value: taskStats.pending, color: "text-yellow-600" },
+// // // //   ];
+
+// // // //   return (
+// // // //     <div className="min-h-screen bg-gray-50">
+// // // //       <div className="flex">
+// // // //         <div
+// // // //           className={`transition-all duration-300 ${resourcesOpen ? "w-80" : "w-16"
+// // // //             } border-r border-gray-300 bg-white flex flex-col`}
+// // // //         >
+// // // //           <div className={`p-4 ${resourcesOpen ? "items-start" : "items-center"} flex flex-col`}>
+// // // //             <button
+// // // //               className={`w-full flex ${resourcesOpen ? "justify-between" : "justify-center"
+// // // //                 } items-center p-2 bg-gray-100 rounded hover:bg-gray-200 transition-all`}
+// // // //               onClick={() => setResourcesOpen(!resourcesOpen)}
+// // // //               title={resourcesOpen ? "Hide Resources" : "Show Resources"}
+// // // //             >
+// // // //               {resourcesOpen ? (
+// // // //                 <>
+// // // //                   <span className="font-semibold">Resources</span>
+// // // //                   <ChevronUp className="h-4 w-4" />
+// // // //                 </>
+// // // //               ) : (
+// // // //                 <div className="flex flex-col items-center">
+// // // //                   <AlertTriangle className="h-5 w-5 text-yellow-500 mb-1" />
+
+// // // //                 </div>
+// // // //               )}
+// // // //             </button>
+
+// // // //             {resourcesOpen && (
+// // // //               <div className="mt-4 overflow-y-auto max-h-[90vh] w-full">
+// // // //                 <ResourceHub />
+// // // //               </div>
+// // // //             )}
+// // // //           </div>
+// // // //         </div>
+
+
+// // // //         <main className="flex-1 p-6">
+// // // //           <div className="mb-6">
+// // // //             <h1 className="text-3xl font-bold mb-2">Smart Taskboard</h1>
+// // // //             <p className="text-gray-600">Manage your waste collection tasks efficiently</p>
+// // // //           </div>
+
+// // // //           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+// // // //             {quickStats.map((stat, i) => (
+// // // //               <div key={i} className="bg-white shadow rounded p-4 flex flex-col items-center">
+// // // //                 <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+// // // //                 <div className="text-sm text-gray-500">{stat.label}</div>
+// // // //               </div>
+// // // //             ))}
+// // // //           </div>
+
+// // // //           <div className="flex gap-2 mb-6">
+// // // //             <button className={`px-4 py-2 rounded ${activeView === "tasks" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("tasks")}>My Tasks</button>
+// // // //             <button className={`px-4 py-2 rounded ${activeView === "performance" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("performance")}>Performance</button>
+// // // //           </div>
+
+// // // //           {activeView === "tasks" && (
+// // // //             <>
+// // // //               {loading && (
+// // // //                 <div className="space-y-6">
+// // // //                   <TaskCardSkeleton />
+// // // //                   <TaskCardSkeleton />
+// // // //                 </div>
+// // // //               )}
+// // // //               {error && <div className="text-center p-8 text-red-600">{error}</div>}
+// // // //               {!loading && !error && (
+// // // //                 <TaskQueue tasks={tasks} onStatusUpdate={handleTaskStatusUpdate} />
+// // // //               )}
+// // // //             </>
+// // // //           )}
+// // // //           {activeView === "performance" && <PerformanceTracker />}
+// // // //         </main>
+// // // //       </div>
+// // // //     </div>
+// // // //   );
+// // // // }
+
+// // // // export default WorkerDashboard;
+
+
+
+// // // "use client";
+
+// // // import React, { useState, useEffect, useCallback } from "react";
+// // // import { ChevronUp, AlertTriangle } from "lucide-react";
+// // // import TaskQueue from "./TaskQueue";
+// // // import PerformanceTracker from "./PerformanceTracker";
+// // // import ResourceHub from "./ResourceHub";
+// // // import TaskCardSkeleton from "./TaskCardSkeleton";
+
+// // // // --- API Utility ---
+// // // const fetchApi = async (url, method = "GET", body = null) => {
+// // //   const token = localStorage.getItem("workerToken");
+// // //   if (!token) throw new Error("No auth token found. Please login.");
+
+// // //   const headers = {
+// // //     "Content-Type": "application/json",
+// // //     Authorization: `Bearer ${token}`,
+// // //   };
+// // //   const config = { method, headers };
+// // //   if (body) config.body = JSON.stringify(body);
+// // //   const finalUrl = url.startsWith("/") && !url.startsWith("//") ? `http://localhost:8001${url}` : url;
+// // //   const response = await fetch(finalUrl, config);
+// // //   if (!response.ok) {
+// // //     const errorData = await response.json().catch(() => ({}));
+// // //     throw new Error(`API Error ${response.status}: ${errorData.msg || response.statusText}`);
+// // //   }
+// // //   return response.json();
+// // // };
+
+// // // function WorkerDashboard() {
+// // //   const [activeView, setActiveView] = useState("tasks");
+// // //   const [resourcesOpen, setResourcesOpen] = useState(false);
+// // //   const [tasks, setTasks] = useState([]);
+// // //   const [loading, setLoading] = useState(true);
+// // //   const [error, setError] = useState(null);
+// // //   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, inProgress: 0, pending: 0 });
+
+// // //   const fetchAssignedTasks = useCallback(async () => {
+// // //     setLoading(true);
+// // //     setError(null);
+// // //     try {
+// // //       const res = await fetchApi("/api/worker/tasks");
+// // //       const rawTasks = res.data?.tasks || res.tasks || [];
+
+// // //       const mappedTasks = rawTasks.map((t, index) => ({
+// // //         displayId: `W${(index + 1).toString().padStart(3, "0")}`,
+// // //         id: t._id,
+// // //         title: t.title,
+// // //         location: t.location?.address || "N/A",
+// // //         lat: t.location?.coordinates?.lat || 0,
+// // //         lng: t.location?.coordinates?.lng || 0,
+// // //         priority: t.priority,
+// // //         description: t.description || "",
+// // //         status: t.status || "pending",
+// // //         estimatedTime: t.estimatedDuration || "N/A",
+// // //         assignedTime: t.createdAt || "N/A",
+// // //         dueTime: t.scheduledDate || "N/A",
+// // //         wasteType: t.report?.wasteType || "N/A",
+// // //         supportNumber: t.report?.phone || "N/A",
+// // //       }));
+
+// // //       const visibleTasks = mappedTasks.filter((t) => t.status !== "completed");
+// // //       setTasks(visibleTasks);
+
+// // //       setTaskStats({
+// // //         total: mappedTasks.length,
+// // //         completed: mappedTasks.filter((t) => t.status === "completed").length,
+// // //         inProgress: mappedTasks.filter((t) => t.status === "in-progress").length,
+// // //         pending: mappedTasks.filter((t) => ["pending", "assigned", "accepted", "on-the-way"].includes(t.status)).length,
+// // //       });
+
+// // //     } catch (err) {
+// // //       setError(err.message);
+// // //     } finally {
+// // //       setLoading(false);
+// // //     }
+// // //   }, []);
+
+// // //   useEffect(() => {
+// // //     const token = localStorage.getItem("workerToken");
+// // //     if (!token) {
+// // //       alert("Please login first.");
+// // //       window.location.href = "/login";
+// // //       return;
+// // //     }
+// // //     fetchAssignedTasks();
+// // //   }, [fetchAssignedTasks]);
+
+// // //   const handleTaskStatusUpdate = async (taskId, newStatus) => {
+// // //     try {
+// // //       await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", { status: newStatus });
+// // //       fetchAssignedTasks(); // Refetch all tasks to get the latest state
+// // //     } catch (err) {
+// // //       alert("Failed to update task status: " + err.message);
+// // //     }
+// // //   };
+
+// // //   const quickStats = [
+// // //     { label: "Today's Tasks", value: taskStats.total, color: "text-blue-600" },
+// // //     { label: "Completed", value: taskStats.completed, color: "text-green-600" },
+// // //     { label: "In Progress", value: taskStats.inProgress, color: "text-orange-500" },
+// // //     { label: "Pending", value: taskStats.pending, color: "text-yellow-600" },
+// // //   ];
+
+// // //   return (
+// // //     <div className="min-h-screen bg-gray-50">
+// // //       <div className="flex flex-col md:flex-row">
+// // //         <div
+// // //           className={`transition-all duration-300 
+// // //           ${resourcesOpen ? "w-full md:w-80" : "w-full md:w-16"} 
+// // //           border-b md:border-b-0 md:border-r border-gray-300 
+// // //           bg-white flex flex-col`}
+// // //         >
+
+// // //           <div className={`p-4 ${resourcesOpen ? "items-start" : "items-center"} flex flex-col`}>
+// // //             <button
+// // //               className={`w-full flex ${resourcesOpen ? "justify-between" : "justify-center"
+// // //                 } items-center p-2 bg-gray-100 rounded hover:bg-gray-200 transition-all`}
+// // //               onClick={() => setResourcesOpen(!resourcesOpen)}
+// // //               title={resourcesOpen ? "Hide Resources" : "Show Resources"}
+// // //             >
+// // //               {resourcesOpen ? (
+// // //                 <>
+// // //                   <span className="font-semibold">Resources</span>
+// // //                   <ChevronUp className="h-4 w-4" />
+// // //                 </>
+// // //               ) : (
+// // //                 <div className="flex flex-col items-center">
+// // //                   <AlertTriangle className="h-5 w-5 text-yellow-500 mb-1" />
+
+// // //                 </div>
+// // //               )}
+// // //             </button>
+
+// // //             {resourcesOpen && (
+// // //               <div className="mt-4 overflow-y-auto max-h-[90vh] w-full">
+// // //                 <ResourceHub />
+// // //               </div>
+// // //             )}
+// // //           </div>
+// // //         </div>
+
+
+// // //         <main className="flex-1 p-4 sm:p-6">
+// // //           <div className="mb-6">
+// // //             <h1 className="text-2xl sm:text-3xl font-bold mb-2">Smart Taskboard</h1>
+
+// // //             <p className="text-gray-600">Manage your waste collection tasks efficiently</p>
+// // //           </div>
+
+// // //           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+
+// // //             {quickStats.map((stat, i) => (
+// // //               <div key={i} className="bg-white shadow rounded p-4 flex flex-col items-center">
+// // //                 <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+// // //                 <div className="text-sm text-gray-500">{stat.label}</div>
+// // //               </div>
+// // //             ))}
+// // //           </div>
+// // //           <div className="flex flex-wrap gap-2 mb-6">
+
+// // //             <button className={`px-4 py-2 rounded ${activeView === "tasks" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("tasks")}>My Tasks</button>
+// // //             <button className={`px-4 py-2 rounded ${activeView === "performance" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("performance")}>Performance</button>
+// // //           </div>
+
+// // //           {activeView === "tasks" && (
+// // //             <>
+// // //               {loading && (
+// // //                 <div className="space-y-6">
+// // //                   <TaskCardSkeleton />
+// // //                   <TaskCardSkeleton />
+// // //                 </div>
+// // //               )}
+// // //               {error && <div className="text-center p-8 text-red-600">{error}</div>}
+// // //               {!loading && !error && (
+// // //                 <TaskQueue tasks={tasks} onStatusUpdate={handleTaskStatusUpdate} />
+// // //               )}
+// // //             </>
+// // //           )}
+// // //           {activeView === "performance" && <PerformanceTracker />}
+// // //         </main>
+// // //       </div>
+// // //     </div>
+// // //   );
+// // // }
+
+// // // export default WorkerDashboard;
+// // "use client";
+
+// // import React, { useState, useEffect, useCallback } from "react";
+// // import { ChevronUp, AlertTriangle } from "lucide-react";
+// // import TaskQueue from "./TaskQueue";
+// // import PerformanceTracker from "./PerformanceTracker";
+// // import ResourceHub from "./ResourceHub";
+// // import TaskCardSkeleton from "./TaskCardSkeleton";
+// // import { WorkerMessaging } from "../message"; // Added this import
+
+// // // --- API Utility ---
+// // const fetchApi = async (url, method = "GET", body = null) => {
+// //   const token = localStorage.getItem("workerToken");
+// //   if (!token) throw new Error("No auth token found. Please login.");
+
+// //   const headers = {
+// //     "Content-Type": "application/json",
+// //     Authorization: `Bearer ${token}`,
+// //   };
+// //   const config = { method, headers };
+// //   if (body) config.body = JSON.stringify(body);
+// //   const finalUrl = url.startsWith("/") && !url.startsWith("//") ? `http://localhost:8001${url}` : url;
+// //   const response = await fetch(finalUrl, config);
+// //   if (!response.ok) {
+// //     const errorData = await response.json().catch(() => ({}));
+// //     throw new Error(`API Error ${response.status}: ${errorData.msg || response.statusText}`);
+// //   }
+// //   return response.json();
+// // };
+
+// // function WorkerDashboard() {
+// //   const [activeView, setActiveView] = useState("tasks");
+// //   const [resourcesOpen, setResourcesOpen] = useState(false);
+// //   const [tasks, setTasks] = useState([]);
+// //   const [loading, setLoading] = useState(true);
+// //   const [error, setError] = useState(null);
+// //   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, inProgress: 0, pending: 0 });
+
+// //   // Add this state to the WorkerDashboard component
+// //   const [selectedTask, setSelectedTask] = useState(null);
+// //   const [showMessaging, setShowMessaging] = useState(false);
+
+// //   const fetchAssignedTasks = useCallback(async () => {
+// //     setLoading(true);
+// //     setError(null);
+// //     try {
+// //       const res = await fetchApi("/api/worker/tasks");
+// //       const rawTasks = res.data?.tasks || res.tasks || [];
+
+// //       const mappedTasks = rawTasks.map((t, index) => ({
+// //         displayId: `W${(index + 1).toString().padStart(3, "0")}`,
+// //         id: t._id,
+// //         title: t.title,
+// //         location: t.location?.address || "N/A",
+// //         lat: t.location?.coordinates?.lat || 0,
+// //         lng: t.location?.coordinates?.lng || 0,
+// //         priority: t.priority,
+// //         description: t.description || "",
+// //         status: t.status || "pending",
+// //         estimatedTime: t.estimatedDuration || "N/A",
+// //         assignedTime: t.createdAt || "N/A",
+// //         dueTime: t.scheduledDate || "N/A",
+// //         wasteType: t.report?.wasteType || "N/A",
+// //         supportNumber: t.report?.phone || "N/A",
+// //       }));
+
+// //       const visibleTasks = mappedTasks.filter((t) => t.status !== "completed");
+// //       setTasks(visibleTasks);
+
+// //       setTaskStats({
+// //         total: mappedTasks.length,
+// //         completed: mappedTasks.filter((t) => t.status === "completed").length,
+// //         inProgress: mappedTasks.filter((t) => t.status === "in-progress").length,
+// //         pending: mappedTasks.filter((t) => ["pending", "assigned", "accepted", "on-the-way"].includes(t.status)).length,
+// //       });
+
+// //     } catch (err) {
+// //       setError(err.message);
+// //     } finally {
+// //       setLoading(false);
+// //     }
+// //   }, []);
+
+// //   useEffect(() => {
+// //     const token = localStorage.getItem("workerToken");
+// //     if (!token) {
+// //       alert("Please login first.");
+// //       window.location.href = "/login";
+// //       return;
+// //     }
+// //     fetchAssignedTasks();
+// //   }, [fetchAssignedTasks]);
+
+// //   const handleTaskStatusUpdate = async (taskId, newStatus) => {
+// //     try {
+// //       await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", { status: newStatus });
+// //       fetchAssignedTasks(); // Refetch all tasks to get the latest state
+// //     } catch (err) {
+// //       alert("Failed to update task status: " + err.message);
+// //     }
+// //   };
+
+// //   // Add this function to handle opening chat
+// //   const handleOpenChat = (task) => {
+// //     setSelectedTask(task);
+// //     setShowMessaging(true);
+// //   };
+
+// //   const quickStats = [
+// //     { label: "Today's Tasks", value: taskStats.total, color: "text-blue-600" },
+// //     { label: "Completed", value: taskStats.completed, color: "text-green-600" },
+// //     { label: "In Progress", value: taskStats.inProgress, color: "text-orange-500" },
+// //     { label: "Pending", value: taskStats.pending, color: "text-yellow-600" },
+// //   ];
+
+// //   return (
+// //     <div className="min-h-screen bg-gray-50">
+// //       <div className="flex flex-col md:flex-row">
+// //         <div
+// //           className={`transition-all duration-300 
+// //           ${resourcesOpen ? "w-full md:w-80" : "w-full md:w-16"} 
+// //           border-b md:border-b-0 md:border-r border-gray-300 
+// //           bg-white flex flex-col`}
+// //         >
+
+// //           <div className={`p-4 ${resourcesOpen ? "items-start" : "items-center"} flex flex-col`}>
+// //             <button
+// //               className={`w-full flex ${resourcesOpen ? "justify-between" : "justify-center"
+// //                 } items-center p-2 bg-gray-100 rounded hover:bg-gray-200 transition-all`}
+// //               onClick={() => setResourcesOpen(!resourcesOpen)}
+// //               title={resourcesOpen ? "Hide Resources" : "Show Resources"}
+// //             >
+// //               {resourcesOpen ? (
+// //                 <>
+// //                   <span className="font-semibold">Resources</span>
+// //                   <ChevronUp className="h-4 w-4" />
+// //                 </>
+// //               ) : (
+// //                 <div className="flex flex-col items-center">
+// //                   <AlertTriangle className="h-5 w-5 text-yellow-500 mb-1" />
+
+// //                 </div>
+// //               )}
+// //             </button>
+
+// //             {resourcesOpen && (
+// //               <div className="mt-4 overflow-y-auto max-h-[90vh] w-full">
+// //                 <ResourceHub />
+// //               </div>
+// //             )}
+// //           </div>
+// //         </div>
+
+
+// //         <main className="flex-1 p-4 sm:p-6">
+// //           <div className="mb-6">
+// //             <h1 className="text-2xl sm:text-3xl font-bold mb-2">Smart Taskboard</h1>
+
+// //             <p className="text-gray-600">Manage your waste collection tasks efficiently</p>
+// //           </div>
+
+// //           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+
+// //             {quickStats.map((stat, i) => (
+// //               <div key={i} className="bg-white shadow rounded p-4 flex flex-col items-center">
+// //                 <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+// //                 <div className="text-sm text-gray-500">{stat.label}</div>
+// //               </div>
+// //             ))}
+// //           </div>
+// //           <div className="flex flex-wrap gap-2 mb-6">
+
+// //             <button className={`px-4 py-2 rounded ${activeView === "tasks" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("tasks")}>My Tasks</button>
+// //             <button className={`px-4 py-2 rounded ${activeView === "performance" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("performance")}>Performance</button>
+// //           </div>
+
+// //           {activeView === "tasks" && (
+// //             <>
+// //               {loading && (
+// //                 <div className="space-y-6">
+// //                   <TaskCardSkeleton />
+// //                   <TaskCardSkeleton />
+// //                 </div>
+// //               )}
+// //               {error && <div className="text-center p-8 text-red-600">{error}</div>}
+// //               {!loading && !error && (
+// //                 <TaskQueue
+// //                   tasks={tasks}
+// //                   onStatusUpdate={handleTaskStatusUpdate}
+// //                   onOpenChat={handleOpenChat} 
+// //                 />
+// //               )}
+// //             </>
+// //           )}
+// //           {activeView === "performance" && <PerformanceTracker />}
+// //         </main>
+// //       </div>
+
+// //       {/* Add this modal to the return section, before the closing div */}
+// //       {showMessaging && selectedTask && (
+// //         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4">
+// //           <div className="bg-white rounded-lg w-full max-w-2xl h-[80vh] overflow-hidden">
+// //             <WorkerMessaging
+// //               task={selectedTask}
+// //               onClose={() => {
+// //                 setShowMessaging(false);
+// //                 setSelectedTask(null);
+// //               }}
+// //             />
+// //           </div>
+// //         </div>
+// //       )}
+// //     </div>
+// //   );
+// // }
+
+// // export default WorkerDashboard;
 // "use client";
 
 // import React, { useState, useEffect, useCallback } from "react";
@@ -6,6 +755,8 @@
 // import PerformanceTracker from "./PerformanceTracker";
 // import ResourceHub from "./ResourceHub";
 // import TaskCardSkeleton from "./TaskCardSkeleton";
+// // ✅ ADDED Import
+// import { WorkerMessaging } from "../messaging/WorkerMessaging";
 
 // // --- API Utility ---
 // const fetchApi = async (url, method = "GET", body = null) => {
@@ -18,11 +769,16 @@
 //   };
 //   const config = { method, headers };
 //   if (body) config.body = JSON.stringify(body);
-//   const finalUrl = url.startsWith("/") && !url.startsWith("//") ? `http://localhost:8001${url}` : url;
+//   const finalUrl =
+//     url.startsWith("/") && !url.startsWith("//")
+//       ? `http://localhost:8001${url}`
+//       : url;
 //   const response = await fetch(finalUrl, config);
 //   if (!response.ok) {
 //     const errorData = await response.json().catch(() => ({}));
-//     throw new Error(`API Error ${response.status}: ${errorData.msg || response.statusText}`);
+//     throw new Error(
+//       `API Error ${response.status}: ${errorData.msg || response.statusText}`
+//     );
 //   }
 //   return response.json();
 // };
@@ -33,7 +789,16 @@
 //   const [tasks, setTasks] = useState([]);
 //   const [loading, setLoading] = useState(true);
 //   const [error, setError] = useState(null);
-//   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, inProgress: 0, pending: 0 });
+//   const [taskStats, setTaskStats] = useState({
+//     total: 0,
+//     completed: 0,
+//     inProgress: 0,
+//     pending: 0,
+//   });
+
+//   // ✅ ADDED States
+//   const [selectedTask, setSelectedTask] = useState(null);
+//   const [showMessaging, setShowMessaging] = useState(false);
 
 //   const fetchAssignedTasks = useCallback(async () => {
 //     setLoading(true);
@@ -41,7 +806,7 @@
 //     try {
 //       const res = await fetchApi("/api/worker/tasks");
 //       const rawTasks = res.data?.tasks || res.tasks || [];
-      
+
 //       const mappedTasks = rawTasks.map((t, index) => ({
 //         displayId: `W${(index + 1).toString().padStart(3, "0")}`,
 //         id: t._id,
@@ -58,17 +823,19 @@
 //         wasteType: t.report?.wasteType || "N/A",
 //         supportNumber: t.report?.phone || "N/A",
 //       }));
-      
+
 //       const visibleTasks = mappedTasks.filter((t) => t.status !== "completed");
 //       setTasks(visibleTasks);
 
 //       setTaskStats({
 //         total: mappedTasks.length,
 //         completed: mappedTasks.filter((t) => t.status === "completed").length,
-//         inProgress: mappedTasks.filter((t) => t.status === "in-progress").length,
-//         pending: mappedTasks.filter((t) => ["pending", "assigned", "accepted", "on-the-way"].includes(t.status)).length,
+//         inProgress: mappedTasks.filter((t) => t.status === "in-progress")
+//           .length,
+//         pending: mappedTasks.filter((t) =>
+//           ["pending", "assigned", "accepted", "on-the-way"].includes(t.status)
+//         ).length,
 //       });
-
 //     } catch (err) {
 //       setError(err.message);
 //     } finally {
@@ -88,191 +855,50 @@
 
 //   const handleTaskStatusUpdate = async (taskId, newStatus) => {
 //     try {
-//       await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", { status: newStatus });
-//       fetchAssignedTasks(); // Refetch all tasks to get the latest state
-//     } catch (err) {
-//       alert("Failed to update task status: " + err.message);
-//     }
-//   };
-
-//   const quickStats = [
-//     { label: "Today's Tasks", value: taskStats.total, color: "text-blue-600" },
-//     { label: "Completed", value: taskStats.completed, color: "text-green-600" },
-//     { label: "In Progress", value: taskStats.inProgress, color: "text-orange-500" },
-//     { label: "Pending", value: taskStats.pending, color: "text-yellow-600" },
-//   ];
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       <div className="flex">
-//         <div className={`transition-all duration-300 ${resourcesOpen ? "w-80" : "w-16"} border-r border-gray-300`}>
-//           <div className="p-4">
-//             <button className="w-full flex justify-between items-center p-2 bg-gray-100 rounded hover:bg-gray-200" onClick={() => setResourcesOpen(!resourcesOpen)}>
-//               {resourcesOpen ? ( <><span className="font-semibold">Resources</span><ChevronUp className="h-4 w-4" /></> ) : ( <AlertTriangle className="h-4 w-4" /> )}
-//             </button>
-//             {resourcesOpen && <div className="mt-4"><ResourceHub /></div>}
-//           </div>
-//         </div>
-
-//         <main className="flex-1 p-6">
-//           <div className="mb-6">
-//             <h1 className="text-3xl font-bold mb-2">Smart Taskboard</h1>
-//             <p className="text-gray-600">Manage your waste collection tasks efficiently</p>
-//           </div>
-
-//           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-//             {quickStats.map((stat, i) => (
-//               <div key={i} className="bg-white shadow rounded p-4 flex flex-col items-center">
-//                 <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
-//                 <div className="text-sm text-gray-500">{stat.label}</div>
-//               </div>
-//             ))}
-//           </div>
-
-//           <div className="flex gap-2 mb-6">
-//             <button className={`px-4 py-2 rounded ${activeView === "tasks" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("tasks")}>My Tasks</button>
-//             <button className={`px-4 py-2 rounded ${activeView === "performance" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("performance")}>Performance</button>
-//           </div>
-
-//           {activeView === "tasks" && (
-//             <>
-//               {loading && (
-//                 <div className="space-y-6">
-//                   <TaskCardSkeleton />
-//                   <TaskCardSkeleton />
-//                 </div>
-//               )}
-//               {error && <div className="text-center p-8 text-red-600">{error}</div>}
-//               {!loading && !error && (
-//                 <TaskQueue tasks={tasks} onStatusUpdate={handleTaskStatusUpdate} />
-//               )}
-//             </>
-//           )}
-//           {activeView === "performance" && <PerformanceTracker />}
-//         </main>
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default WorkerDashboard;
-
-
-// "use client";
-
-// import React, { useState, useEffect, useCallback } from "react";
-// import { ChevronUp, AlertTriangle } from "lucide-react";
-// import TaskQueue from "./TaskQueue";
-// import PerformanceTracker from "./PerformanceTracker";
-// import ResourceHub from "./ResourceHub";
-// import TaskCardSkeleton from "./TaskCardSkeleton";
-
-// // --- API Utility ---
-// const fetchApi = async (url, method = "GET", body = null) => {
-//   const token = localStorage.getItem("workerToken");
-//   if (!token) throw new Error("No auth token found. Please login.");
-
-//   const headers = {
-//     "Content-Type": "application/json",
-//     Authorization: `Bearer ${token}`,
-//   };
-//   const config = { method, headers };
-//   if (body) config.body = JSON.stringify(body);
-//   const finalUrl = url.startsWith("/") && !url.startsWith("//") ? `http://localhost:8001${url}` : url;
-//   const response = await fetch(finalUrl, config);
-//   if (!response.ok) {
-//     const errorData = await response.json().catch(() => ({}));
-//     throw new Error(`API Error ${response.status}: ${errorData.msg || response.statusText}`);
-//   }
-//   return response.json();
-// };
-
-// function WorkerDashboard() {
-//   const [activeView, setActiveView] = useState("tasks");
-//   const [resourcesOpen, setResourcesOpen] = useState(false);
-//   const [tasks, setTasks] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, inProgress: 0, pending: 0 });
-
-//   const fetchAssignedTasks = useCallback(async () => {
-//     setLoading(true);
-//     setError(null);
-//     try {
-//       const res = await fetchApi("/api/worker/tasks");
-//       const rawTasks = res.data?.tasks || res.tasks || [];
-
-//       const mappedTasks = rawTasks.map((t, index) => ({
-//         displayId: `W${(index + 1).toString().padStart(3, "0")}`,
-//         id: t._id,
-//         title: t.title,
-//         location: t.location?.address || "N/A",
-//         lat: t.location?.coordinates?.lat || 0,
-//         lng: t.location?.coordinates?.lng || 0,
-//         priority: t.priority,
-//         description: t.description || "",
-//         status: t.status || "pending",
-//         estimatedTime: t.estimatedDuration || "N/A",
-//         assignedTime: t.createdAt || "N/A",
-//         dueTime: t.scheduledDate || "N/A",
-//         wasteType: t.report?.wasteType || "N/A",
-//         supportNumber: t.report?.phone || "N/A",
-//       }));
-
-//       const visibleTasks = mappedTasks.filter((t) => t.status !== "completed");
-//       setTasks(visibleTasks);
-
-//       setTaskStats({
-//         total: mappedTasks.length,
-//         completed: mappedTasks.filter((t) => t.status === "completed").length,
-//         inProgress: mappedTasks.filter((t) => t.status === "in-progress").length,
-//         pending: mappedTasks.filter((t) => ["pending", "assigned", "accepted", "on-the-way"].includes(t.status)).length,
+//       await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", {
+//         status: newStatus,
 //       });
-
-//     } catch (err) {
-//       setError(err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   }, []);
-
-//   useEffect(() => {
-//     const token = localStorage.getItem("workerToken");
-//     if (!token) {
-//       alert("Please login first.");
-//       window.location.href = "/login";
-//       return;
-//     }
-//     fetchAssignedTasks();
-//   }, [fetchAssignedTasks]);
-
-//   const handleTaskStatusUpdate = async (taskId, newStatus) => {
-//     try {
-//       await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", { status: newStatus });
 //       fetchAssignedTasks(); // Refetch all tasks to get the latest state
 //     } catch (err) {
 //       alert("Failed to update task status: " + err.message);
 //     }
 //   };
 
+//   // ✅ ADDED Handler
+//   const handleOpenChat = (task) => {
+//     setSelectedTask(task);
+//     setShowMessaging(true);
+//   };
+
 //   const quickStats = [
 //     { label: "Today's Tasks", value: taskStats.total, color: "text-blue-600" },
 //     { label: "Completed", value: taskStats.completed, color: "text-green-600" },
-//     { label: "In Progress", value: taskStats.inProgress, color: "text-orange-500" },
+//     {
+//       label: "In Progress",
+//       value: taskStats.inProgress,
+//       color: "text-orange-500",
+//     },
 //     { label: "Pending", value: taskStats.pending, color: "text-yellow-600" },
 //   ];
 
 //   return (
 //     <div className="min-h-screen bg-gray-50">
-//       <div className="flex">
+//       <div className="flex flex-col md:flex-row">
 //         <div
-//           className={`transition-all duration-300 ${resourcesOpen ? "w-80" : "w-16"
-//             } border-r border-gray-300 bg-white flex flex-col`}
+//           className={`transition-all duration-300 
+//           ${resourcesOpen ? "w-full md:w-80" : "w-full md:w-16"} 
+//           border-b md:border-b-0 md:border-r border-gray-300 
+//           bg-white flex flex-col`}
 //         >
-//           <div className={`p-4 ${resourcesOpen ? "items-start" : "items-center"} flex flex-col`}>
+//           <div
+//             className={`p-4 ${
+//               resourcesOpen ? "items-start" : "items-center"
+//             } flex flex-col`}
+//           >
 //             <button
-//               className={`w-full flex ${resourcesOpen ? "justify-between" : "justify-center"
-//                 } items-center p-2 bg-gray-100 rounded hover:bg-gray-200 transition-all`}
+//               className={`w-full flex ${
+//                 resourcesOpen ? "justify-between" : "justify-center"
+//               } items-center p-2 bg-gray-100 rounded hover:bg-gray-200 transition-all`}
 //               onClick={() => setResourcesOpen(!resourcesOpen)}
 //               title={resourcesOpen ? "Hide Resources" : "Show Resources"}
 //             >
@@ -284,7 +910,6 @@
 //               ) : (
 //                 <div className="flex flex-col items-center">
 //                   <AlertTriangle className="h-5 w-5 text-yellow-500 mb-1" />
-
 //                 </div>
 //               )}
 //             </button>
@@ -297,25 +922,51 @@
 //           </div>
 //         </div>
 
-
-//         <main className="flex-1 p-6">
+//         <main className="flex-1 p-4 sm:p-6">
 //           <div className="mb-6">
-//             <h1 className="text-3xl font-bold mb-2">Smart Taskboard</h1>
-//             <p className="text-gray-600">Manage your waste collection tasks efficiently</p>
+//             <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+//               Smart Taskboard
+//             </h1>
+
+//             <p className="text-gray-600">
+//               Manage your waste collection tasks efficiently
+//             </p>
 //           </div>
 
-//           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+//           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
 //             {quickStats.map((stat, i) => (
-//               <div key={i} className="bg-white shadow rounded p-4 flex flex-col items-center">
-//                 <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+//               <div
+//                 key={i}
+//                 className="bg-white shadow rounded p-4 flex flex-col items-center"
+//               >
+//                 <div className={`text-2xl font-bold ${stat.color}`}>
+//                   {stat.value}
+//                 </div>
 //                 <div className="text-sm text-gray-500">{stat.label}</div>
 //               </div>
 //             ))}
 //           </div>
-
-//           <div className="flex gap-2 mb-6">
-//             <button className={`px-4 py-2 rounded ${activeView === "tasks" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("tasks")}>My Tasks</button>
-//             <button className={`px-4 py-2 rounded ${activeView === "performance" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("performance")}>Performance</button>
+//           <div className="flex flex-wrap gap-2 mb-6">
+//             <button
+//               className={`px-4 py-2 rounded ${
+//                 activeView === "tasks"
+//                   ? "bg-blue-600 text-white"
+//                   : "bg-white border text-gray-700"
+//               }`}
+//               onClick={() => setActiveView("tasks")}
+//             >
+//               My Tasks
+//             </button>
+//             <button
+//               className={`px-4 py-2 rounded ${
+//                 activeView === "performance"
+//                   ? "bg-blue-600 text-white"
+//                   : "bg-white border text-gray-700"
+//               }`}
+//               onClick={() => setActiveView("performance")}
+//             >
+//               Performance
+//             </button>
 //           </div>
 
 //           {activeView === "tasks" && (
@@ -326,15 +977,36 @@
 //                   <TaskCardSkeleton />
 //                 </div>
 //               )}
-//               {error && <div className="text-center p-8 text-red-600">{error}</div>}
+//               {error && (
+//                 <div className="text-center p-8 text-red-600">{error}</div>
+//               )}
 //               {!loading && !error && (
-//                 <TaskQueue tasks={tasks} onStatusUpdate={handleTaskStatusUpdate} />
+//                 <TaskQueue
+//                   tasks={tasks}
+//                   onStatusUpdate={handleTaskStatusUpdate}
+//                   onOpenChat={handleOpenChat} // ✅ UPDATED Prop
+//                 />
 //               )}
 //             </>
 //           )}
 //           {activeView === "performance" && <PerformanceTracker />}
 //         </main>
 //       </div>
+
+//       {/* ✅ ADDED Modal */}
+//       {showMessaging && selectedTask && (
+//         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4">
+//           <div className="bg-white rounded-lg w-full max-w-2xl h-[80vh] overflow-hidden">
+//             <WorkerMessaging
+//               task={selectedTask}
+//               onClose={() => {
+//                 setShowMessaging(false);
+//                 setSelectedTask(null);
+//               }}
+//             />
+//           </div>
+//         </div>
+//       )}
 //     </div>
 //   );
 // }
@@ -342,7 +1014,7 @@
 // export default WorkerDashboard;
 
 
-
+///-------------------------------
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -351,6 +1023,9 @@ import TaskQueue from "./TaskQueue";
 import PerformanceTracker from "./PerformanceTracker";
 import ResourceHub from "./ResourceHub";
 import TaskCardSkeleton from "./TaskCardSkeleton";
+// ✅ ADDED Import
+//import { WorkerMessaging } from "../messaging/WorkerMessaging";
+import { EmergencyMessaging } from '../EmergencyMessaging';
 
 // --- API Utility ---
 const fetchApi = async (url, method = "GET", body = null) => {
@@ -363,11 +1038,16 @@ const fetchApi = async (url, method = "GET", body = null) => {
   };
   const config = { method, headers };
   if (body) config.body = JSON.stringify(body);
-  const finalUrl = url.startsWith("/") && !url.startsWith("//") ? `http://localhost:8001${url}` : url;
+  const finalUrl =
+    url.startsWith("/") && !url.startsWith("//")
+      ? `http://localhost:8001${url}`
+      : url;
   const response = await fetch(finalUrl, config);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(`API Error ${response.status}: ${errorData.msg || response.statusText}`);
+    throw new Error(
+      `API Error ${response.status}: ${errorData.msg || response.statusText}`
+    );
   }
   return response.json();
 };
@@ -378,7 +1058,17 @@ function WorkerDashboard() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, inProgress: 0, pending: 0 });
+  const [taskStats, setTaskStats] = useState({
+    total: 0,
+    completed: 0,
+    inProgress: 0,
+    pending: 0,
+  });
+
+  // ✅ ADDED States
+  const [selectedTask, setSelectedTask] = useState(null);
+  // ✅ REPLACED showMessaging with showChat
+  const [showChat, setShowChat] = useState(false);
 
   const fetchAssignedTasks = useCallback(async () => {
     setLoading(true);
@@ -410,10 +1100,12 @@ function WorkerDashboard() {
       setTaskStats({
         total: mappedTasks.length,
         completed: mappedTasks.filter((t) => t.status === "completed").length,
-        inProgress: mappedTasks.filter((t) => t.status === "in-progress").length,
-        pending: mappedTasks.filter((t) => ["pending", "assigned", "accepted", "on-the-way"].includes(t.status)).length,
+        inProgress: mappedTasks.filter((t) => t.status === "in-progress")
+          .length,
+        pending: mappedTasks.filter((t) =>
+          ["pending", "assigned", "accepted", "on-the-way"].includes(t.status)
+        ).length,
       });
-
     } catch (err) {
       setError(err.message);
     } finally {
@@ -433,17 +1125,29 @@ function WorkerDashboard() {
 
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
     try {
-      await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", { status: newStatus });
+      await fetchApi(`/api/worker/tasks/${taskId}/status`, "PUT", {
+        status: newStatus,
+      });
       fetchAssignedTasks(); // Refetch all tasks to get the latest state
     } catch (err) {
       alert("Failed to update task status: " + err.message);
     }
   };
 
+  // ✅ UPDATED Handler to use setShowChat
+  const handleOpenChat = (task) => {
+    setSelectedTask(task);
+    setShowChat(true);
+  };
+
   const quickStats = [
     { label: "Today's Tasks", value: taskStats.total, color: "text-blue-600" },
     { label: "Completed", value: taskStats.completed, color: "text-green-600" },
-    { label: "In Progress", value: taskStats.inProgress, color: "text-orange-500" },
+    {
+      label: "In Progress",
+      value: taskStats.inProgress,
+      color: "text-orange-500",
+    },
     { label: "Pending", value: taskStats.pending, color: "text-yellow-600" },
   ];
 
@@ -456,11 +1160,15 @@ function WorkerDashboard() {
           border-b md:border-b-0 md:border-r border-gray-300 
           bg-white flex flex-col`}
         >
-
-          <div className={`p-4 ${resourcesOpen ? "items-start" : "items-center"} flex flex-col`}>
+          <div
+            className={`p-4 ${
+              resourcesOpen ? "items-start" : "items-center"
+            } flex flex-col`}
+          >
             <button
-              className={`w-full flex ${resourcesOpen ? "justify-between" : "justify-center"
-                } items-center p-2 bg-gray-100 rounded hover:bg-gray-200 transition-all`}
+              className={`w-full flex ${
+                resourcesOpen ? "justify-between" : "justify-center"
+              } items-center p-2 bg-gray-100 rounded hover:bg-gray-200 transition-all`}
               onClick={() => setResourcesOpen(!resourcesOpen)}
               title={resourcesOpen ? "Hide Resources" : "Show Resources"}
             >
@@ -472,7 +1180,6 @@ function WorkerDashboard() {
               ) : (
                 <div className="flex flex-col items-center">
                   <AlertTriangle className="h-5 w-5 text-yellow-500 mb-1" />
-
                 </div>
               )}
             </button>
@@ -485,27 +1192,51 @@ function WorkerDashboard() {
           </div>
         </div>
 
-
         <main className="flex-1 p-4 sm:p-6">
           <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Smart Taskboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+              Smart Taskboard
+            </h1>
 
-            <p className="text-gray-600">Manage your waste collection tasks efficiently</p>
+            <p className="text-gray-600">
+              Manage your waste collection tasks efficiently
+            </p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
-
             {quickStats.map((stat, i) => (
-              <div key={i} className="bg-white shadow rounded p-4 flex flex-col items-center">
-                <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+              <div
+                key={i}
+                className="bg-white shadow rounded p-4 flex flex-col items-center"
+              >
+                <div className={`text-2xl font-bold ${stat.color}`}>
+                  {stat.value}
+                </div>
                 <div className="text-sm text-gray-500">{stat.label}</div>
               </div>
             ))}
           </div>
           <div className="flex flex-wrap gap-2 mb-6">
-
-            <button className={`px-4 py-2 rounded ${activeView === "tasks" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("tasks")}>My Tasks</button>
-            <button className={`px-4 py-2 rounded ${activeView === "performance" ? "bg-blue-600 text-white" : "bg-white border text-gray-700"}`} onClick={() => setActiveView("performance")}>Performance</button>
+            <button
+              className={`px-4 py-2 rounded ${
+                activeView === "tasks"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white border text-gray-700"
+              }`}
+              onClick={() => setActiveView("tasks")}
+            >
+              My Tasks
+            </button>
+            <button
+              className={`px-4 py-2 rounded ${
+                activeView === "performance"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white border text-gray-700"
+              }`}
+              onClick={() => setActiveView("performance")}
+            >
+              Performance
+            </button>
           </div>
 
           {activeView === "tasks" && (
@@ -516,15 +1247,40 @@ function WorkerDashboard() {
                   <TaskCardSkeleton />
                 </div>
               )}
-              {error && <div className="text-center p-8 text-red-600">{error}</div>}
+              {error && (
+                <div className="text-center p-8 text-red-600">{error}</div>
+              )}
               {!loading && !error && (
-                <TaskQueue tasks={tasks} onStatusUpdate={handleTaskStatusUpdate} />
+                <TaskQueue
+                  tasks={tasks}
+                  onStatusUpdate={handleTaskStatusUpdate}
+                  onOpenChat={handleOpenChat} // ✅ This prop is correct
+                />
               )}
             </>
           )}
           {activeView === "performance" && <PerformanceTracker />}
         </main>
       </div>
+
+      {/* ✅ REPLACED Modal with new chat modal */}
+      {showChat && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl h-[80vh]">
+            {/* <EmergencyMessaging
+              userType="worker"
+              taskId={selectedTask?._id || selectedTask?.id}
+              onClose={() => setShowChat(false)}
+            /> */}
+            <EmergencyMessaging
+    userType="worker"
+    taskId={selectedTask?._id || selectedTask?.id}
+    task={selectedTask}  // ✅ ADD THIS - pass the entire task object
+    onClose={() => setShowChat(false)}
+/>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

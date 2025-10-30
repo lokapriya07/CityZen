@@ -12,6 +12,7 @@ import CitizenDashboard from "./components/citizen/CitizenDashboard";
 import ReportForm from "./components/citizen/report-form";
 import UploadImage from './components/UploadImage';
 import { AuthProvider } from './components/context/AuthContext';
+
 import 'leaflet/dist/leaflet.css';
 // This path is corrected to './components/home/Footer'
 
@@ -22,6 +23,7 @@ function App() {
     <Router>
       <AuthProvider>
         <div className="min-h-screen bg-white flex flex-col">
+      
           <Navigation />
           <main className="flex-grow">
             <Routes>
