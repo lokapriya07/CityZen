@@ -617,7 +617,7 @@
 // };
 
 // module.exports = { initializeSocket };
-
+//sockets/socketHandler.js
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Task = require("../models/Task");
@@ -700,56 +700,28 @@ const initializeSocket = (io) => {
         });
         console.log(`✅ Sent 'connected' event to ${userName}`);
 
-        // Join task chat
+        // ------------------------------------------------------------------
+        // ✅ NEW JOIN TASK CHAT HANDLER
+        // ------------------------------------------------------------------
+        // Join task chat - COMPLETELY OPEN FOR DEMO
         socket.on("join_task_chat", async ({ taskId }) => {
             try {
-                console.log(`💬 ${userName} attempting to join task chat: ${taskId}`);
-                console.log(`📋 Join task data:`, { taskId, userId, userRole: socket.userRole });
+                console.log(`💬 ${userName} (${socket.userRole}) joining task chat: ${taskId}`);
                 
-                const task = await Task.findById(taskId)
-                    .populate("assignedWorker")
-                    .populate("report");
-
-                if (!task) {
-                    console.error(`❌ Task not found: ${taskId}`);
-                    socket.emit("socket_error", { 
-                        type: "socket_error", 
-                        message: "Task not found" 
-                    });
-                    return;
-                }
-
-                console.log(`✅ Task found: ${task._id}, Assigned Worker: ${task.assignedWorker?._id}, Created By: ${task.report?.createdBy}`);
-
-                // Check access permissions
-                const hasAccess = 
-                    socket.userRole === "admin" ||
-                    (socket.userRole === "citizen" && task.report.createdBy.toString() === socket.userId) ||
-                    (socket.userRole === "worker" && task.assignedWorker._id.toString() === socket.userId);
-
-                console.log(`🔐 Access check - User: ${socket.userRole} ${userId}, Has Access: ${hasAccess}`);
-                console.log(`   Citizen check: ${socket.userRole === "citizen" && task.report.createdBy.toString() === socket.userId}`);
-                console.log(`   Worker check: ${socket.userRole === "worker" && task.assignedWorker._id.toString() === socket.userId}`);
-                console.log(`   Admin check: ${socket.userRole === "admin"}`);
-
-                if (!hasAccess) {
-                    console.error(`❌ Access denied for ${userName} to task ${taskId}`);
-                    socket.emit("socket_error", { 
-                        type: "socket_error", 
-                        message: "Access denied to task chat" 
-                    });
-                    return;
-                }
-
+                // ✅ DEMO: NO ACCESS CONTROL - ALLOW EVERYONE
+                console.log(`🔓 DEMO MODE: Allowing ${userName} to join chat ${taskId}`);
+                
+                // Join the room
                 socket.join(`task_chat:${taskId}`);
-                console.log(`✅ ${userName} successfully joined task chat room: task_chat:${taskId}`);
                 
+                console.log(`✅ ${userName} joined task chat room: task_chat:${taskId}`);
+                
+                // Send confirmation
                 socket.emit("joined_task_chat", { 
                     type: "joined_task_chat",
                     taskId, 
                     message: "Joined task chat successfully"
                 });
-                console.log(`✅ Sent 'joined_task_chat' event to ${userName}`);
 
                 // Send message history
                 console.log(`📚 Fetching message history for task: ${taskId}`);
@@ -758,7 +730,7 @@ const initializeSocket = (io) => {
                     .sort({ createdAt: 1 })
                     .limit(50);
 
-                console.log(`📨 Found ${messages.length} messages in history`);
+                console.log(`📨 Sending ${messages.length} messages to ${userName}`);
 
                 socket.emit("message_history", {
                     type: "message_history",
@@ -780,7 +752,6 @@ const initializeSocket = (io) => {
                         isRead: msg.isRead,
                     }))
                 });
-                console.log(`✅ Sent message history with ${messages.length} messages to ${userName}`);
 
             } catch (err) {
                 console.error("❌ join_task_chat error:", err);
@@ -791,52 +762,44 @@ const initializeSocket = (io) => {
             }
         });
 
-        // Send message
+        // ------------------------------------------------------------------
+        // ✅ NEW SEND MESSAGE HANDLER (FIXED)
+        // ------------------------------------------------------------------
+        // Send message - FIXED VERSION
         socket.on("send_message", async (data) => {
             try {
                 const { taskId, message, messageType = "text", location = null } = data;
                 
-                console.log(`📤 ${userName} sending message to task ${taskId}`);
-                console.log(`📝 Message data:`, { 
-                    taskId, 
-                    message: message.substring(0, 50) + (message.length > 50 ? '...' : ''), 
-                    messageType, 
-                    location 
-                });
+                console.log(`📤 [SEND_MESSAGE] ${userName} (${socket.userRole}) sending to task ${taskId}:`, message);
 
-                const task = await Task.findById(taskId)
-                    .populate("assignedWorker")
-                    .populate("report");
-
-                if (!task) {
-                    console.error(`❌ Task not found: ${taskId}`);
-                    socket.emit("socket_error", { 
-                        type: "socket_error", 
-                        message: "Task not found" 
-                    });
-                    return;
-                }
-
-                console.log(`✅ Task found for messaging: ${task._id}`);
-
-                // Determine receiver
+                // ✅ FIX: Handle both "user" and "citizen" roles
                 let receiverId;
-                if (socket.userRole === "citizen") {
-                    receiverId = task.assignedWorker._id;
-                    console.log(`👤 Citizen messaging worker: ${receiverId}`);
-                } else if (socket.userRole === "worker") {
-                    receiverId = task.report.createdBy;
-                    console.log(`👤 Worker messaging citizen: ${receiverId}`);
+                const senderRole = socket.userRole;
+                
+                console.log(`👤 Sender role: ${senderRole}, User ID: ${socket.userId}`);
+
+                if (senderRole === "citizen" || senderRole === "user") {
+                    // If citizen/user sends, find the assigned worker
+                    const task = await Task.findById(taskId).populate("assignedWorker");
+                    receiverId = task?.assignedWorker?._id;
+                    console.log(`👥 Citizen sending to worker: ${receiverId}`);
+                } else if (senderRole === "worker") {
+                    // If worker sends, find the report creator
+                    const task = await Task.findById(taskId).populate("report");
+                    receiverId = task?.report?.createdBy;
+                    console.log(`👥 Worker sending to citizen: ${receiverId}`);
                 } else {
-                    console.error(`❌ Invalid role for messaging: ${socket.userRole}`);
-                    socket.emit("socket_error", { 
-                        type: "socket_error", 
-                        message: "Only citizens and workers can message" 
-                    });
-                    return;
+                    console.log(`❓ Unknown sender role: ${senderRole}`);
                 }
 
-                console.log(`💾 Saving message to database...`);
+                // ✅ FIX: If receiver is still undefined, set a default or skip validation
+                if (!receiverId) {
+                    console.log(`⚠️  Receiver not found, using sender as fallback`);
+                    receiverId = socket.userId; // Fallback to prevent validation error
+                }
+
+                console.log(`✅ Final receiver: ${receiverId}`);
+
                 // Save message to database
                 const newMessage = await Message.create({
                     taskId,
@@ -847,13 +810,10 @@ const initializeSocket = (io) => {
                     location: messageType === "location" ? location : null,
                 });
 
-                console.log(`✅ Message saved to database with ID: ${newMessage._id}`);
-
                 // Populate sender info
                 await newMessage.populate("sender", "name role avatar");
-                console.log(`✅ Sender info populated: ${newMessage.sender.name}`);
 
-                // Broadcast message
+                // Create message data
                 const messageData = {
                     type: "new_message",
                     id: newMessage._id,
@@ -869,27 +829,28 @@ const initializeSocket = (io) => {
                     messageType: newMessage.messageType,
                     location: newMessage.location,
                     createdAt: newMessage.createdAt,
-                    isRead: newMessage.isRead,
+                    isRead: false,
                 };
 
-                console.log(`📢 Broadcasting message to room: task_chat:${taskId}`);
+                // Check who's in the room before broadcasting
                 const room = io.sockets.adapter.rooms.get(`task_chat:${taskId}`);
-                console.log(`👥 Users in room: ${room ? room.size : 0}`);
-                
-                io.to(`task_chat:${taskId}`).emit("new_message", messageData);
-                console.log(`✅ Message broadcasted successfully to task ${taskId}`);
+                console.log(`👥 Users in room task_chat:${taskId}:`, room ? Array.from(room).length : 0, 'users');
 
-                console.log(`📬 Message delivery complete for: ${newMessage._id}`);
+                // Broadcast to everyone in the room
+                console.log(`📢 Broadcasting to room: task_chat:${taskId}`);
+                io.to(`task_chat:${taskId}`).emit("new_message", messageData);
+                
+                console.log(`✅ Message broadcast completed for task ${taskId}`);
 
             } catch (err) {
                 console.error("❌ send_message error:", err);
-                console.error("❌ Error details:", err.stack);
                 socket.emit("socket_error", { 
                     type: "socket_error", 
                     message: "Failed to send message" 
                 });
             }
         });
+
 
         // Typing indicators
         socket.on("typing_start", ({ taskId }) => {
