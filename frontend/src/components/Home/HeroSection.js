@@ -318,6 +318,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // <-- 1. IMPORT HOOK
 
 export default function HeroSection() {
   const [counters, setCounters] = useState({
@@ -325,6 +326,8 @@ export default function HeroSection() {
     communities: 0,
     successRate: 0,
   });
+
+  const navigate = useNavigate(); // <-- 2. INITIALIZE HOOK
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -382,6 +385,7 @@ export default function HeroSection() {
                 className="px-4 xs:px-6 sm:px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full font-semibold shadow-lg flex items-center justify-center gap-2 group text-xs xs:text-sm sm:text-base"
                 whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(16, 185, 129, 0.4)' }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/signup')} // <-- 3. ADD ONCLICK
               >
                 Report Waste Now
                 <motion.div
@@ -396,6 +400,7 @@ export default function HeroSection() {
                 className="px-4 xs:px-6 sm:px-8 py-3 bg-white text-green-600 rounded-full font-semibold shadow-lg border-2 border-green-200 text-xs xs:text-sm sm:text-base"
                 whileHover={{ scale: 1.05, borderColor: 'rgb(16, 185, 129)' }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/learn-more')} // <-- 3. ADD ONCLICK
               >
                 Learn More
               </motion.button>
