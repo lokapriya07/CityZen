@@ -389,10 +389,10 @@ import {
   Navigation,
   Play,
   Phone,
-  MessageSquare, // ✅ Added chat icon
+  MessageSquare,
 } from "lucide-react";
 
-export default function TaskQueue({ tasks = [], onStatusUpdate, onOpenChat }) { // ✅ Added onOpenChat prop
+export default function TaskQueue({ tasks = [], onStatusUpdate, onOpenChat }) {
   const getNextAction = (status) => {
     switch (status) {
       case "assigned":
@@ -445,6 +445,19 @@ export default function TaskQueue({ tasks = [], onStatusUpdate, onOpenChat }) { 
     window.open(`tel:${number}`);
   };
 
+  // ✅ UPDATED: Handle chat opening with proper parameters
+  const handleOpenChat = (task) => {
+    if (onOpenChat) {
+      // Extract citizen information from the task/report
+      const citizenInfo = task.report?.createdBy || task.citizen || {
+        name: "Citizen",
+        id: task.report?.createdBy?._id || task.createdBy
+      };
+
+      onOpenChat(task, citizenInfo);
+    }
+  };
+
   const getPriorityStyles = (priority) => {
     switch (priority?.toLowerCase()) {
       case "high":
@@ -457,10 +470,31 @@ export default function TaskQueue({ tasks = [], onStatusUpdate, onOpenChat }) { 
     }
   };
 
+  const getStatusStyles = (status) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "in-progress":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "on-the-way":
+        return "bg-purple-100 text-purple-800 border-purple-200";
+      case "accepted":
+        return "bg-amber-100 text-amber-800 border-amber-200";
+      case "assigned":
+        return "bg-gray-100 text-gray-800 border-gray-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
   return (
     <div className="space-y-6">
       {tasks.length === 0 ? (
-        <div className="text-center text-gray-500 py-10">No tasks available</div>
+        <div className="text-center text-gray-500 py-10">
+          <div className="text-4xl mb-4">📋</div>
+          <p className="text-lg font-medium text-gray-600">No tasks assigned</p>
+          <p className="text-sm text-gray-500 mt-1">New tasks will appear here when assigned to you</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {tasks.map((task) => {
@@ -469,95 +503,146 @@ export default function TaskQueue({ tasks = [], onStatusUpdate, onOpenChat }) { 
 
             return (
               <div
-                key={task.id}
-                className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-gray-100 overflow-hidden flex flex-col justify-between"
+                key={task.id || task._id}
+                className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col justify-between group"
               >
                 {/* Header */}
-                <div className="p-4 border-b bg-gray-50 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                  <div>
-                    <div className="text-lg font-semibold text-gray-800">
-                      {task.displayId || task.id}
+                <div className="p-4 border-b bg-gradient-to-r from-gray-50 to-white flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                  <div className="flex-1">
+                    <div className="text-lg font-bold text-gray-900 font-mono">
+                      {task.displayId || task.id || task._id?.slice(-6)}
                     </div>
-                    <div className="flex gap-2 mt-1 flex-wrap">
+                    <div className="flex gap-2 mt-2 flex-wrap">
                       <span
-                        className={`px-2 py-0.5 rounded text-xs font-bold ${getPriorityStyles(
+                        className={`px-2 py-1 rounded-full text-xs font-bold ${getPriorityStyles(
                           task.priority
                         )}`}
                       >
                         {task.priority ? task.priority.toUpperCase() : "N/A"}
                       </span>
-                      <span className="px-2 py-0.5 rounded text-xs border text-gray-600">
-                        {task.status.replace("-", " ").toUpperCase()}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusStyles(task.status)}`}>
+                        {task.status.replace(/-/g, " ").toUpperCase()}
                       </span>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    <div>Assigned: {task.assignedTime}</div>
-                    <div>Due: {task.dueTime}</div>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>Assigned: {task.assignedTime || "Recently"}</span>
+                    </div>
+                    {task.dueTime && (
+                      <div className="flex items-center gap-1">
+                        <span>Due: {task.dueTime}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Details */}
-                <div className="p-3 sm:p-4 space-y-3 flex-1">
-                  <div className="font-bold text-gray-800 text-base sm:text-lg">
-                    {task.title || "Untitled Task"}
+                <div className="p-4 sm:p-5 space-y-4 flex-1">
+                  <div className="font-bold text-gray-900 text-lg leading-tight">
+                    {task.title || "Maintenance Task"}
                   </div>
-                  <div className="flex items-start gap-2 text-sm">
-                    <MapPin className="h-4 w-4 mt-0.5 text-gray-500" />
-                    <div>
-                      <div className="font-medium break-words">
-                        {task.location || "N/A"}
+
+                  <div className="flex items-start gap-3 text-sm">
+                    <MapPin className="h-4 w-4 mt-0.5 text-blue-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-medium text-gray-800 break-words">
+                        {task.location || task.report?.location?.address || "Location not specified"}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        Waste Type: {task.wasteType || "General"}
+                      <div className="text-xs text-gray-600 mt-1">
+                        Waste Type: <span className="font-medium">{task.wasteType || "General"}</span>
                       </div>
+                      {task.report?.description && (
+                        <div className="text-xs text-gray-500 mt-2 line-clamp-2">
+                          {task.report.description}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+
+                  <div className="flex items-center gap-3 text-sm text-gray-700 bg-gray-50 rounded-lg p-3">
                     <Clock className="h-4 w-4 text-gray-500" />
-                    Estimated: {task.estimatedTime || "—"} min
+                    <span>Estimated: <strong>{task.estimatedTime || "30"}</strong> minutes</span>
                   </div>
+
+                  {/* Citizen Info (if available) */}
+                  {(task.report?.createdBy || task.citizen) && (
+                    <div className="flex items-center gap-3 text-sm p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        {(task.report?.createdBy?.name?.[0] || task.citizen?.name?.[0] || "C").toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-medium text-blue-800">
+                          {task.report?.createdBy?.name || task.citizen?.name || "Citizen"}
+                        </div>
+                        <div className="text-xs text-blue-600">
+                          {task.report?.createdBy?.phone || task.citizen?.phone || "Contact available"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-4 border-t flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="p-4 border-t bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => handleNavigate(task)}
-                      className="flex items-center gap-1 px-3 py-1 border rounded text-sm hover:bg-gray-100"
+                      className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-white hover:shadow-sm transition-all duration-200"
+                      title="Open in Google Maps"
                     >
-                      <Navigation className="h-4 w-4" /> Navigate
+                      <Navigation className="h-4 w-4" />
+                      <span className="hidden sm:inline">Navigate</span>
                     </button>
-                    <button
-                      onClick={() => handleCallSupport(task.supportNumber)}
-                      className="flex items-center gap-1 px-3 py-1 border rounded text-sm hover:bg-gray-100"
-                    >
-                      <Phone className="h-4 w-4" /> Call
-                    </button>
-                    
-                    {/* ✅ ADDED CHAT BUTTON */}
-                    <button
-                      onClick={() => onOpenChat(task)}
-                      className="flex items-center gap-1 px-3 py-1 border rounded text-sm hover:bg-gray-100"
-                    >
-                      <MessageSquare className="h-4 w-4" /> Chat
-                    </button>
-                    {/* ✅ END ADDED BUTTON */}
 
+                    <button
+                      onClick={() => handleCallSupport(task.supportNumber || task.report?.contactNumber)}
+                      className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-white hover:shadow-sm transition-all duration-200"
+                      title="Call support"
+                    >
+                      <Phone className="h-4 w-4" />
+                      <span className="hidden sm:inline">Call</span>
+                    </button>
+
+                    {/* ✅ UPDATED CHAT BUTTON */}
+                    <button
+                      onClick={() => handleOpenChat(task)}
+                      className="flex items-center gap-2 px-3 py-2 border border-blue-300 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 hover:shadow-sm transition-all duration-200"
+                      title="Chat with citizen"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      <span className="hidden sm:inline">Chat</span>
+                    </button>
                   </div>
 
                   {nextAction && (
                     <button
                       onClick={() =>
-                        handleActionClick(task.id, nextAction.nextStatus)
+                        handleActionClick(task.id || task._id, nextAction.nextStatus)
                       }
-                      className="flex items-center justify-center gap-2 px-3 py-2 w-full sm:w-auto bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                      className="flex items-center justify-center gap-2 px-4 py-2 w-full sm:w-auto bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm shadow-sm hover:shadow-md transition-all duration-200"
                     >
                       {Icon && <Icon className="h-4 w-4" />}
                       {nextAction.label}
                     </button>
                   )}
                 </div>
+
+                {/* Progress indicator for in-progress tasks */}
+                {(task.status === "in-progress" || task.status === "on-the-way") && (
+                  <div className="px-4 pb-3">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${task.status === "on-the-way" ? "bg-purple-500 w-1/3" : "bg-blue-500 w-2/3"
+                          } transition-all duration-500`}
+                      ></div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1 text-center">
+                      {task.status === "on-the-way" ? "On the way to location" : "Work in progress"}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
