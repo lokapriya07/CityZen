@@ -16,7 +16,7 @@ const messageSchema = new mongoose.Schema(
     receiver: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      // required: true, // This line is removed to make it optional
     },
     message: {
       type: String,

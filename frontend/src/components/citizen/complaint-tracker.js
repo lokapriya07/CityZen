@@ -2073,23 +2073,17 @@ export function ComplaintTracker({ complaint }) {
             {/* Modals */}
             {/* ✅ REPLACED with new chat modal */}
             {showChat && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-lg w-full max-w-2xl h-[80vh]">
-                  {/* <EmergencyMessaging
-                    userType="citizen"
-                    taskId={selectedReport?._id || selectedReport?.id}
-                    worker={selectedWorker}
-                    onClose={() => setShowChat(false)}
-                  /> */}
-                  <EmergencyMessaging
-    userType="citizen"
-    taskId={selectedReport?._id || selectedReport?.id}
-    worker={selectedWorker}
-    onClose={() => setShowChat(false)}
-/>
-                </div>
-              </div>
-            )}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg w-full max-w-2xl h-[80vh]">
+            <EmergencyMessaging
+                userType="citizen"
+                taskId={selectedReport?._id || selectedReport?.id}
+                worker={selectedWorker}
+                onClose={() => setShowChat(false)}
+            />
+        </div>
+    </div>
+)}
             {showReportIssue && (
               <ReportIssue
                 complaint={complaint}

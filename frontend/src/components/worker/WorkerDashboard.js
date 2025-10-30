@@ -1265,22 +1265,16 @@ function WorkerDashboard() {
 
       {/* ✅ REPLACED Modal with new chat modal */}
       {showChat && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg w-full max-w-2xl h-[80vh]">
-            {/* <EmergencyMessaging
-              userType="worker"
-              taskId={selectedTask?._id || selectedTask?.id}
-              onClose={() => setShowChat(false)}
-            /> */}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg w-full max-w-2xl h-[80vh]">
             <EmergencyMessaging
-    userType="worker"
-    taskId={selectedTask?._id || selectedTask?.id}
-    task={selectedTask}  // ✅ ADD THIS - pass the entire task object
-    onClose={() => setShowChat(false)}
-/>
-          </div>
+                userType="worker"
+                taskId={selectedTask?._id || selectedTask?.id}
+                onClose={() => setShowChat(false)}
+            />
         </div>
-      )}
+    </div>
+)}
     </div>
   );
 }
