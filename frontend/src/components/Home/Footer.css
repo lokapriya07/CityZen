@@ -1,0 +1,273 @@
+/* ======================= FOOTER STYLES ======================= */
+
+/* Basic reset */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Main Footer Container */
+.site-footer {
+    background-color: #004a6c; /* Main dark blue/teal background */
+    color: #ffffff;
+    padding-top: 40px;
+}
+
+.footer-container {
+    width: 90%;
+    max-width: 1300px;
+    margin: 0 auto;
+    position: relative; /* For the back-to-top button */
+}
+
+/* Top 5-Column Section */
+.footer-main {
+    display: flex;
+    flex-wrap: wrap; /* Allows columns to stack on smaller screens */
+    justify-content: space-between;
+    padding-bottom: 30px;
+}
+
+.footer-column {
+    flex: 1; /* Each column takes equal space */
+    min-width: 180px; /* Ensures columns don't get too narrow */
+    padding: 0 15px;
+    margin-bottom: 20px;
+}
+
+.footer-column h4 {
+    font-size: 1.1rem;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #ffffff;
+}
+
+.footer-column ul li {
+    margin-bottom: 12px;
+}
+
+.footer-column ul a {
+    color: #b0d9e8; /* Lighter blue for links */
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.footer-column ul a:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+/* Middle Section (Logo, Buttons, Social) */
+.footer-sub {
+    display: flex;
+    flex-wrap: wrap; /* Wraps items on mobile */
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 0;
+    border-top: 1px solid #005f8a;
+    border-bottom: 1px solid #005f8a;
+    gap: 20px; /* Adds space between items when they wrap */
+}
+
+.footer-logo {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #ffffff;
+    /* If using an <img> logo: */
+    /* img { max-width: 200px; height: auto; } */
+}
+
+.footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+}
+
+.footer-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+/* Button Styles */
+.btn {
+    padding: 12px 20px;
+    border: 1px solid #ffffff;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: #007bff; /* Button blue */
+    border-color: #007bff;
+    color: #ffffff;
+}
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.btn-outline {
+    background-color: transparent;
+    border-color: #ffffff;
+    color: #ffffff;
+}
+.btn-outline:hover {
+    background-color: #ffffff;
+    color: #004a6c; /* Main footer bg color */
+}
+
+/* Social Icons */
+.social-icons a {
+    color: #ffffff;
+    font-size: 1.3rem;
+    margin-left: 15px;
+    transition: color 0.2s;
+}
+.social-icons a:hover {
+    color: #b0d9e8; /* Lighter link color */
+}
+
+/* Back to Top Arrow */
+.back-to-top {
+    position: absolute;
+    right: -10px;
+    top: -20px; /* Positions it above the middle bar */
+    background-color: #f0f0f0;
+    color: #333;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 5px;
+    font-size: 1.2rem;
+}
+.back-to-top:hover {
+    background-color: #ddd;
+}
+
+
+/* Bottom Legal Section */
+.footer-legal {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 25px 0;
+    font-size: 0.85rem;
+    color: #b0d9e8;
+    background-color: #003b58; /* Even darker shade */
+    
+    /* This part makes the legal bar full-width */
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    padding-left: 5vw; /* Aligns content with the container */
+    padding-right: 5vw;
+    box-sizing: border-box; /* Important for full-width padding */
+}
+
+.footer-legal p {
+    margin: 0;
+}
+
+.legal-links a {
+    margin-left: 20px;
+    color: #b0d9e8;
+}
+.legal-links a:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+/* ======================= RESPONSIVENESS ======================= */
+
+/* For tablets and smaller desktops */
+@media (max-width: 992px) {
+    .footer-main {
+        gap: 20px; /* Adds space between wrapped rows */
+    }
+    .footer-column {
+        min-width: 200px; /* Allows for 2-3 columns */
+    }
+}
+
+/* For mobile phones */
+@media (max-width: 768px) {
+    .footer-sub {
+        flex-direction: column; /* Stack logo and actions vertically */
+        align-items: flex-start; /* Align to the left */
+    }
+    
+    .footer-actions {
+        flex-direction: column; /* Stack buttons and social */
+        align-items: flex-start;
+        width: 100%;
+    }
+    
+    .footer-buttons {
+        width: 100%;
+    }
+    .footer-buttons .btn {
+        flex: 1; /* Make buttons take equal width */
+    }
+
+    .social-icons {
+        margin-top: 10px;
+    }
+    .social-icons a {
+        margin-left: 0;
+        margin-right: 15px;
+    }
+
+    .back-to-top {
+        display: none; /* Hide back-to-top on mobile */
+    }
+    
+    .footer-legal {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .legal-links {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .legal-links a {
+        margin-left: 0;
+    }
+}
+/* Back to Top Arrow */
+.back-to-top {
+    position: absolute;
+    right: -10px;
+    top: -20px; /* Positions it above the middle bar */
+    background-color: #f0f0f0;
+    color: #333;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    cursor: pointer; /* Added for better usability */
+}
+.back-to-top:hover {
+    background-color: #ddd;
+}
