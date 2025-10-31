@@ -512,13 +512,20 @@ export default function WasteHeatmap() {
                     if (heatPoints.length > 0) {
                         // Ensure L.heatLayer is available before calling it
                          if (window.L.heatLayer) {
-                            heatLayerRef.current = window.L.heatLayer(heatPoints, {
-                                radius: 25,
-                                blur: 15,
-                                maxZoom: 17,
-                                minOpacity: 0.3, // Make cooler areas slightly visible
-                                gradient: { 0.4: 'blue', 0.65: 'lime', 0.8: 'yellow', 1.0: 'red' }
-                            }).addTo(map);
+                             heatLayerRef.current = window.L.heatLayer(heatPoints, {
+                                 radius: 35, // bigger radius for smoother blending
+                                 blur: 25,   // stronger blur to merge nearby points
+                                 maxZoom: 17,
+                                 minOpacity: 0.3,
+                                 max: 1.0,   // ensure normalization of intensity (important)
+                                 gradient: {
+                                     0.2: 'blue',
+                                     0.6: 'yellow',
+                                     0.8: 'orange',
+                                     1.0: 'red'
+                                 }
+                             }).addTo(map);
+
                             console.log(`✅ Heatmap layer added/updated with ${heatPoints.length} points.`);
                          } else {
                               console.warn("L.heatLayer function not found when trying to add layer.");

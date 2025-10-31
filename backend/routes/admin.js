@@ -979,13 +979,18 @@ router.get("/workers", async (req, res) => {
                 $project: {
                     name: 1,
                     email: 1,
+                    phone: 1,              // ✅ ADDED phone number
                     isActive: 1,
                     workerDetails: 1,
                     stats: {
                         assignedTasks: { $size: "$tasks" },
                         completedTasks: {
                             $size: {
-                                $filter: { input: "$tasks", as: "task", cond: { $eq: ["$$task.status", "completed"] } }
+                                $filter: {
+                                    input: "$tasks",
+                                    as: "task",
+                                    cond: { $eq: ["$$task.status", "completed"] }
+                                }
                             }
                         },
                         avgRating: { $avg: "$tasks.qualityRating" }
@@ -995,11 +1000,20 @@ router.get("/workers", async (req, res) => {
             {
                 $addFields: {
                     "stats.completionRate": {
-                        $cond: { if: { $gt: ["$stats.assignedTasks", 0] }, then: { $multiply: [{ $divide: ["$stats.completedTasks", "$stats.assignedTasks"] }, 100] }, else: 0 }
+                        $cond: {
+                            if: { $gt: ["$stats.assignedTasks", 0] },
+                            then: {
+                                $multiply: [
+                                    { $divide: ["$stats.completedTasks", "$stats.assignedTasks"] },
+                                    100
+                                ]
+                            },
+                            else: 0
+                        }
                     }
                 }
             },
-            { $sort: { "stats.rating": -1 } },
+            { $sort: { "stats.avgRating": -1 } }, // 🧠 small fix: correct field name for sorting
             { $skip: skip },
             { $limit: parseInt(limit) }
         ]);
@@ -1023,6 +1037,7 @@ router.get("/workers", async (req, res) => {
         res.status(500).json({ success: false, message: "Failed to fetch workers" });
     }
 });
+
 
 // @desc      Get detailed performance stats for all workers
 // @route     GET /api/admin/worker-performance

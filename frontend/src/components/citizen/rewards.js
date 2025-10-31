@@ -207,13 +207,13 @@ export default function RewardsStore() {
 
   const handleRedeem = (reward) => {
     if (userPoints >= reward.pointsRequired) {
-      setRedeemingId(reward.id)
+      setRedeemingId(reward.id);
       setTimeout(() => {
-        // This updates the points in the UI. 
-        // For a full fix, you should also make an API call here
-        // to update the points in the database.
-        setUserPoints(userPoints - reward.pointsRequired)
-        setRedemptionHistory([
+        // Deduct points
+        setUserPoints((prevPoints) => prevPoints - reward.pointsRequired);
+
+        // Add redemption record
+        setRedemptionHistory((prev) => [
           {
             id: `red-${Date.now()}`,
             rewardName: reward.name,
@@ -221,12 +221,19 @@ export default function RewardsStore() {
             redeemedAt: new Date().toISOString(),
             status: "pending",
           },
-          ...redemptionHistory,
-        ])
-        setRedeemingId(null)
-      }, 600)
+          ...prev,
+        ]);
+
+        // ✅ Remove redeemed reward from the store
+        const updatedRewards = mockRewards.filter((r) => r.id !== reward.id);
+        mockRewards.length = 0; // Clear original array
+        mockRewards.push(...updatedRewards); // Refill with updated list
+
+        setRedeemingId(null);
+      }, 600);
     }
-  }
+  };
+
 
   // Add loading and error UI
   if (loading) {

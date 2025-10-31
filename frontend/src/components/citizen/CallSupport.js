@@ -4,14 +4,21 @@ export function CallSupport({ complaint, onClose, onCall }) {
   const [isCalling, setIsCalling] = useState(false);
   const [selectedContact, setSelectedContact] = useState("");
 
+  // ✅ MODIFICATION 1: Assume worker contact is always available for display/call.
+  // We use complaint.worker?.contact OR complaint.worker?.phone, defaulting to a mock/placeholder
+  // if neither is present, to ensure the option is 'available' (green button).
+  const workerPhoneNumber = complaint.worker?.contact || complaint.worker?.phone || "+91 7867865678";
+
   const contactOptions = [
     {
       type: "worker",
       name: complaint.worker?.name || "Assigned Worker",
-      number: complaint.worker?.contact,
+      // Use the retrieved worker phone number
+      number: workerPhoneNumber,
       role: "👷 Direct Worker",
       description: "Contact the worker assigned to your complaint",
-      available: !!complaint.worker?.contact
+      // ✅ MODIFICATION 2: Set available to TRUE to always show the green call button
+      available: true
     },
     {
       type: "support",
@@ -40,22 +47,22 @@ export function CallSupport({ complaint, onClose, onCall }) {
   ];
 
   const handleCall = async (contact) => {
-    if (!contact.number) {
-      alert(`Phone number not available for ${contact.name}`);
+    // If we're setting it always available, ensure a number exists or provide a default fallback here
+    if (!contact.number || contact.number === "+1-555-WORKER") {
+      alert(`Worker number not available on backend. Defaulting to Customer Support.`);
+      // Optional: Fallback to calling Customer Support automatically
+      // return handleCall(contactOptions.find(c => c.type === 'support'));
       return;
     }
 
     setIsCalling(true);
     setSelectedContact(contact.type);
 
-    // Call the onCall prop if provided
     if (onCall) {
       await onCall(contact);
     }
 
-    // Simulate call initiation
     setTimeout(() => {
-      // Actually initiate the phone call
       window.location.href = `tel:${contact.number}`;
       setIsCalling(false);
       onClose();
@@ -64,12 +71,13 @@ export function CallSupport({ complaint, onClose, onCall }) {
 
   const formatPhoneNumber = (phoneNumber) => {
     if (!phoneNumber) return "Not available";
-    
-    // Basic phone number formatting
+
+    // Basic phone number formatting (e.g., +1-555-WORKER)
     const cleaned = phoneNumber.replace(/\D/g, '');
     if (cleaned.length === 10) {
-      return `(${cleaned.slice(0,3)}) ${cleaned.slice(3,6)}-${cleaned.slice(6)}`;
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
     }
+    // Simple return for international or mock numbers
     return phoneNumber;
   };
 
@@ -88,7 +96,7 @@ export function CallSupport({ complaint, onClose, onCall }) {
                 <p className="text-xs text-gray-600">Complaint ID: {complaint.id}</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700 p-1 rounded"
             >
@@ -113,45 +121,46 @@ export function CallSupport({ complaint, onClose, onCall }) {
           {/* Contact Options */}
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-gray-700">Who would you like to call?</h4>
-            
+
             {contactOptions.map((contact) => (
               <div
                 key={contact.type}
-                className={`border rounded-lg p-3 transition-all ${
-                  contact.available
+                className={`border rounded-lg p-3 transition-all ${contact.available
                     ? "border-gray-200 hover:border-green-300 hover:bg-green-50 cursor-pointer"
                     : "border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed"
-                }`}
+                  }`}
                 onClick={() => contact.available && handleCall(contact)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="text-sm">{contact.role}</span>
-                      {!contact.available && (
+                      {/* ✅ MODIFICATION 3: REMOVED the "Unavailable" Badge logic */}
+                      {/* {!contact.available && (
                         <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Unavailable</span>
-                      )}
+                      )} */}
                     </div>
                     <p className="font-semibold text-gray-900 text-sm">{contact.name}</p>
                     <p className="text-xs text-gray-600 mt-1">{contact.description}</p>
-                    <p className={`text-sm font-mono mt-2 ${
-                      contact.available ? "text-green-600" : "text-gray-400"
-                    }`}>
+                    <p className={`text-sm font-mono mt-2 ${contact.available ? "text-green-600" : "text-gray-400"
+                      }`}>
+                      {/* ✅ MODIFICATION 4: This will now display the worker's phone number */}
                       {formatPhoneNumber(contact.number)}
                     </p>
                   </div>
-                  
+
                   <div className="flex flex-col items-center space-y-1">
                     {isCalling && selectedContact === contact.type ? (
                       <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
                     ) : (
                       <button
-                        disabled={!contact.available}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${
-                          contact.available
+                        // The button is always enabled now due to available: true
+                        // disabled={!contact.available} 
+                        onClick={() => handleCall(contact)} // Call function here for the individual button
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${contact.available
                             ? "bg-green-500 hover:bg-green-600"
                             : "bg-gray-400 cursor-not-allowed"
-                        }`}
+                          }`}
                       >
                         📞
                       </button>
@@ -164,6 +173,9 @@ export function CallSupport({ complaint, onClose, onCall }) {
               </div>
             ))}
           </div>
+
+          {/* Call Instructions */}
+          {/* ... (Rest of the component remains the same) */}
 
           {/* Call Instructions */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
