@@ -371,41 +371,40 @@ router.use(authorize("worker"));
 // @desc    Worker updates their current GPS location
 // @route   PUT /api/workers/location
 // @access  Private (Worker only)
-router.put(
-  "/location",
-  [
-    body("latitude").isFloat().withMessage("Invalid latitude"),
-    body("longitude").isFloat().withMessage("Invalid longitude"),
-  ],
-  handleValidationErrors,
-  async (req, res) => {
-    const { latitude, longitude } = req.body;
+router.put("/location", async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { latitude, longitude, address } = req.body;
 
-    if (!req.user || !req.user.id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication failed." });
+    if (!latitude || !longitude) {
+      return res.status(400).json({ msg: "Latitude and longitude are required" });
     }
 
-    try {
-      // Updates location and saves the timestamp
-      await User.findByIdAndUpdate(req.user.id, {
+    // ✅ Find and update only if role === 'worker'
+    const worker = await User.findOneAndUpdate(
+      { _id: userId, role: "worker" },
+      {
         "workerDetails.currentLocation.latitude": latitude,
         "workerDetails.currentLocation.longitude": longitude,
-        "workerDetails.currentLocation.timestamp": new Date(), // CRITICAL for staleness check
-        isActive: true,
-      });
+        "workerDetails.currentLocation.timestamp": new Date(),
+        ...(address && { "workerDetails.currentLocation.address": address }),
+      },
+      { new: true }
+    );
 
-      res.json({ success: true, message: "Location updated successfully." });
-    } catch (error) {
-      console.error("Worker location update failed:", error);
-      res.status(500).json({
-        success: false,
-        message: "Server Error: Could not update location.",
-      });
+    if (!worker) {
+      return res.status(404).json({ msg: "Worker not found or not authorized" });
     }
+
+    res.json({
+      msg: "✅ Worker location updated successfully",
+      location: worker.workerDetails.currentLocation,
+    });
+  } catch (err) {
+    console.error("❌ Error updating worker location:", err);
+    res.status(500).json({ msg: "Server error while updating worker location" });
   }
-);
+});
 
 // ✅ Get worker location
 router.get("/:name/location", async (req, res) => {

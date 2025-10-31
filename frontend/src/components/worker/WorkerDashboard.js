@@ -187,15 +187,49 @@ function WorkerDashboard() {
         </div>
 
         <main className="flex-1 p-4 sm:p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-              Smart Taskboard
-            </h1>
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+                Smart Taskboard
+              </h1>
+              <p className="text-gray-600">
+                Manage your waste collection tasks efficiently
+              </p>
+            </div>
 
-            <p className="text-gray-600">
-              Manage your waste collection tasks efficiently
-            </p>
+            <button
+              onClick={async () => {
+                if (!navigator.geolocation) {
+                  alert("Geolocation is not supported by your browser.");
+                  return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                  async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    try {
+                      await fetchApi("/api/worker/location", "PUT", {
+                        latitude,
+                        longitude,
+                      });
+                      alert("✅ Location updated successfully!");
+                    } catch (err) {
+                      alert("❌ Failed to update location: " + err.message);
+                    }
+                  },
+                  (err) => {
+                    console.error(err);
+                    alert("⚠️ Could not get location. Please allow location access.");
+                  }
+                );
+              }}
+              className="mt-3 sm:mt-0 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+            >
+              📍 Update Location
+            </button>
           </div>
+
+          
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
             {quickStats.map((stat, i) => (

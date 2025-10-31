@@ -319,9 +319,7 @@ export default function AdminDashboard() {
                             </div>
                             <div className="flex items-center justify-end gap-2 mt-2 sm:mt-0">
                               <Badge variant="Submitted">{formatStatus(report.status)}</Badge>
-                              <Button size="sm" onClick={() => setActiveView("tasks")}>
-                                Assign
-                              </Button>
+                             
                             </div>
                           </div>
                         ))}
@@ -396,9 +394,7 @@ export default function AdminDashboard() {
                       <CardTitle>Quick Actions</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      <Button className="w-full justify-start" onClick={() => alert("Create New Alert clicked!")}>
-                        ➕ Create New Alert
-                      </Button>
+                     
                       <Button variant="outline" className="w-full justify-start" onClick={() => setActiveView("tasks")}>
                         📋 Assign Tasks
                       </Button>

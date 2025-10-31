@@ -379,14 +379,14 @@ export function CommunityEngagement() {
           >
             Bulk Rewards
           </Button>
-          <Button
+          {/* <Button
             variant="outline"
             size="sm"
             onClick={() => setShowAutomatedRulesModal(true)}
             className="w-full sm:w-auto"
           >
             Auto Rules
-          </Button>
+          </Button> */}
           <Button
             size="sm"
             onClick={() => setShowRewardModal(true)}

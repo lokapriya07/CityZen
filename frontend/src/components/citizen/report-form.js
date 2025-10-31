@@ -740,8 +740,24 @@ export function ReportForm({ onSubmit, isSubmitting }) {
                     <div className="section" style={{ animationDelay: '0.5s' }}>
                         <h2><span className="section-icon"><InfoIcon /></span>Additional Information</h2>
                         <div className="form-grid">
-                            <div className="form-group"><label htmlFor="preferredContact">Preferred Contact Method</label><select id="preferredContact" name="preferredContact" value={formData.preferredContact} onChange={handleChange}><option value="">Select Method</option><option value="phone">Phone Call</option><option value="email">Email</option><option value="sms">SMS</option><option value="any">Any method</option></select></div>
-                            <div className="form-group"><label htmlFor="previousReports">Have you reported this before?</label><select id="previousReports" name="previousReports" value={formData.previousReports} onChange={handleChange}><option value="">Select</option><option value="no">No, first time</option><option value="yes">Yes, reported before</option></select></div>
+                            {/* <div className="form-group"><label htmlFor="preferredContact">Preferred Contact Method</label><select id="preferredContact" name="preferredContact" value={formData.preferredContact} onChange={handleChange}><option value="">Select Method</option><option value="phone">Phone Call</option><option value="email">Email</option><option value="sms">SMS</option><option value="any">Any method</option></select></div> */}
+                            <div className="flex justify-start ml-2">
+                                <div className="form-group w-1/2">
+                                    <label htmlFor="previousReports">Have you reported this before?</label>
+                                    <select
+                                        id="previousReports"
+                                        name="previousReports"
+                                        value={formData.previousReports}
+                                        onChange={handleChange}
+                                        className="w-full"
+                                    >
+                                        <option value="">Select</option>
+                                        <option value="no">No, first time</option>
+                                        <option value="yes">Yes, reported before</option>
+                                    </select>
+                                </div>
+                            </div>
+
                         </div>
                         <div className="checkbox-group"><input type="checkbox" id="updates" name="updates" checked={formData.updates} onChange={handleChange} /><label htmlFor="updates">I would like to receive updates on the action taken</label></div>
                     </div>

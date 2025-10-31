@@ -1374,7 +1374,6 @@
 // }
 
 // -----
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -2134,35 +2133,87 @@ export function ComplaintTracker({ complaint }) {
             </div>
 
             {/* ✅ FIXED: Enhanced Location Display WITHOUT authentication */}
-            <div className="mt-6">
-              <h3 className="font-semibold text-md mb-2">Live Location</h3>
-              {loadingLocation ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <p className="text-gray-500 text-sm">Fetching worker location...</p>
-                </div>
-              ) : locationError ? (
-                <div className="space-y-3 p-3 border border-red-200 rounded-lg bg-red-50">
-                  <p className="text-red-500 text-sm font-medium">{locationError}</p>
-                  <div className="flex flex-wrap gap-2">
+            {/* 🔽 1. HIDE WORKER MAP IF RESOLVED 🔽 */}
+            {normalizedStatus !== "resolved" && (
+              <div className="mt-6">
+                <h3 className="font-semibold text-md mb-2">Live Location</h3>
+                {loadingLocation ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <p className="text-gray-500 text-sm">Fetching worker location...</p>
+                  </div>
+                ) : locationError ? (
+                  <div className="space-y-3 p-3 border border-red-200 rounded-lg bg-red-50">
+                    <p className="text-red-500 text-sm font-medium">{locationError}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const workerName = complaint?.worker?.name;
+                          if (workerName) {
+                            setLoadingLocation(true);
+                            fetchWorkerLocation(workerName);
+                          }
+                        }}
+                      >
+                        🔄 Retry Location
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Force use mock data
+                          const mockLocation = {
+                            latitude: 17.463509,
+                            longitude: 78.5033215,
+                            timestamp: new Date().toISOString(),
+                            address: "Hyderabad, Telangana"
+                          };
+                          setWorkerLocation(mockLocation);
+                          setLocationError(null);
+                        }}
+                      >
+                        🎯 Use Demo Location
+                      </Button>
+                    </div>
+                  </div>
+                ) : hasValidLocation ? (
+                  <div className="space-y-2">
+                    <iframe
+                      width="100%"
+                      height="130"
+                      frameBorder="0"
+                      style={{ borderRadius: "8px" }}
+                      src={`https://maps.google.com/maps?q=${locationData.lat},${locationData.lng}&z=16&output=embed`}
+                      allowFullScreen
+                      title="Worker Location"
+                    ></iframe>
+                    <div className="text-xs text-gray-600">
+                      <p>
+                        <strong>Coordinates:</strong> {locationData.lat.toFixed(6)}, {locationData.lng.toFixed(6)}
+                      </p>
+                      {locationData.address && (
+                        <p>
+                          <strong>Address:</strong> {locationData.address}
+                        </p>
+                      )}
+                      {locationData.timestamp && (
+                        <p className="text-right text-gray-500">
+                          Updated: {new Date(locationData.timestamp).toLocaleTimeString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 p-3 border border-yellow-200 rounded-lg bg-yellow-50">
+                    <p className="text-yellow-700 text-sm">
+                      Location service is currently in demo mode.
+                    </p>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const workerName = complaint?.worker?.name;
-                        if (workerName) {
-                          setLoadingLocation(true);
-                          fetchWorkerLocation(workerName);
-                        }
-                      }}
-                    >
-                      🔄 Retry Location
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        // Force use mock data
                         const mockLocation = {
                           latitude: 17.463509,
                           longitude: 78.5033215,
@@ -2173,61 +2224,13 @@ export function ComplaintTracker({ complaint }) {
                         setLocationError(null);
                       }}
                     >
-                      🎯 Use Demo Location
+                      🎯 Show Demo Location
                     </Button>
                   </div>
-                </div>
-              ) : hasValidLocation ? (
-                <div className="space-y-2">
-                  <iframe
-                    width="100%"
-                    height="130"
-                    frameBorder="0"
-                    style={{ borderRadius: "8px" }}
-                    src={`https://maps.google.com/maps?q=${locationData.lat},${locationData.lng}&z=16&output=embed`}
-                    allowFullScreen
-                    title="Worker Location"
-                  ></iframe>
-                  <div className="text-xs text-gray-600">
-                    <p>
-                      <strong>Coordinates:</strong> {locationData.lat.toFixed(6)}, {locationData.lng.toFixed(6)}
-                    </p>
-                    {locationData.address && (
-                      <p>
-                        <strong>Address:</strong> {locationData.address}
-                      </p>
-                    )}
-                    {locationData.timestamp && (
-                      <p className="text-right text-gray-500">
-                        Updated: {new Date(locationData.timestamp).toLocaleTimeString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3 p-3 border border-yellow-200 rounded-lg bg-yellow-50">
-                  <p className="text-yellow-700 text-sm">
-                    Location service is currently in demo mode.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const mockLocation = {
-                        latitude: 17.463509,
-                        longitude: 78.5033215,
-                        timestamp: new Date().toISOString(),
-                        address: "Hyderabad, Telangana"
-                      };
-                      setWorkerLocation(mockLocation);
-                      setLocationError(null);
-                    }}
-                  >
-                    🎯 Show Demo Location
-                  </Button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
+            {/* 🔼 1. END OF MAP HIDE 🔼 */}
           </CardContent>
         </Card>
       )}
@@ -2292,13 +2295,14 @@ export function ComplaintTracker({ complaint }) {
       )}
 
       {/* Quick Actions */}
-      {isWorkerAssigned && (
+      {/* 🔽 2. HIDE QUICK ACTIONS CARD IF RESOLVED 🔽 */}
+      {isWorkerAssigned && normalizedStatus !== "resolved" && (
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
               {normalizedStatus !== "resolved" && (
                 <>
                   <Button
@@ -2307,12 +2311,12 @@ export function ComplaintTracker({ complaint }) {
                   >
                     Send Message
                   </Button>
-                  <Button
+                  {/* <Button
                     variant="outline"
                     onClick={() => setShowShareLocation(true)}
                   >
                     Share Location
-                  </Button>
+                  </Button> */}
                 </>
               )}
 
@@ -2367,6 +2371,8 @@ export function ComplaintTracker({ complaint }) {
           </CardContent>
         </Card>
       )}
+      {/* 🔼 2. END OF QUICK ACTIONS HIDE 🔼 */}
+
 
       {/* Feedback Modal */}
       {showFeedbackForm && (
