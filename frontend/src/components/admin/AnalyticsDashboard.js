@@ -31,74 +31,74 @@ export function AnalyticsDashboard({ reports = [], workers = [] }) {
     workers.length > 0
       ? workers
       : [
-        {
-          id: "1",
-          name: "John Smith",
-          phone: "+1234567890",
-          avatar: "/male-worker.jpg",
-          status: "available",
-          currentLocation: { lat: 40.7128, lng: -74.006 },
-          specialization: ["Bin Collection", "Street Cleaning"],
-          rating: 4.8,
-          completedTasks: 156,
-          currentTask: null,
-        },
-        {
-          id: "2",
-          name: "Sarah Johnson",
-          phone: "+1234567891",
-          avatar: "/female-worker.jpg",
-          status: "busy",
-          currentLocation: { lat: 40.7589, lng: -73.9851 },
-          specialization: ["Hazardous Waste", "Recycling"],
-          rating: 4.9,
-          completedTasks: 203,
-          currentTask: "TASK-001",
-        },
-        {
-          id: "3",
-          name: "Mike Davis",
-          phone: "+1234567892",
-          avatar: "/hardworking-construction-worker.png",
-          status: "available",
-          currentLocation: { lat: 40.7505, lng: -73.9934 },
-          specialization: ["Bin Repair", "Equipment Maintenance"],
-          rating: 4.6,
-          completedTasks: 134,
-          currentTask: null,
-        },
-      ];
+          {
+            id: "1",
+            name: "John Smith",
+            phone: "+1234567890",
+            avatar: "/male-worker.jpg",
+            status: "available",
+            currentLocation: { lat: 40.7128, lng: -74.006 },
+            specialization: ["Bin Collection", "Street Cleaning"],
+            rating: 4.8,
+            completedTasks: 156,
+            currentTask: null,
+          },
+          {
+            id: "2",
+            name: "Sarah Johnson",
+            phone: "+1234567891",
+            avatar: "/female-worker.jpg",
+            status: "busy",
+            currentLocation: { lat: 40.7589, lng: -73.9851 },
+            specialization: ["Hazardous Waste", "Recycling"],
+            rating: 4.9,
+            completedTasks: 203,
+            currentTask: "TASK-001",
+          },
+          {
+            id: "3",
+            name: "Mike Davis",
+            phone: "+1234567892",
+            avatar: "/hardworking-construction-worker.png",
+            status: "available",
+            currentLocation: { lat: 40.7505, lng: -73.9934 },
+            specialization: ["Bin Repair", "Equipment Maintenance"],
+            rating: 4.6,
+            completedTasks: 134,
+            currentTask: null,
+          },
+        ];
 
   const mockReports =
     reports.length > 0
       ? reports
       : [
-        {
-          id: "1",
-          type: "Overflowing Bin",
-          location: "Park Street, Block A",
-          coordinates: { lat: 40.7128, lng: -74.006 },
-          status: "resolved",
-          priority: "high",
-          reportedAt: "2024-01-15T08:30:00Z",
-          reportedBy: "user123",
-          description: "Bin is overflowing with garbage",
-          assignedWorker: "John Smith",
-          resolvedAt: "2024-01-15T10:45:00Z",
-        },
-        {
-          id: "2",
-          type: "Illegal Dumping",
-          location: "Main Road, Sector 15",
-          coordinates: { lat: 40.7589, lng: -73.9851 },
-          status: "in-progress",
-          priority: "critical",
-          reportedAt: "2024-01-15T09:15:00Z",
-          reportedBy: "user456",
-          description: "Large furniture dumped illegally",
-          assignedWorker: "Sarah Johnson",
-        },
-      ];
+          {
+            id: "1",
+            type: "Overflowing Bin",
+            location: "Park Street, Block A",
+            coordinates: { lat: 40.7128, lng: -74.006 },
+            status: "resolved",
+            priority: "high",
+            reportedAt: "2024-01-15T08:30:00Z",
+            reportedBy: "user123",
+            description: "Bin is overflowing with garbage",
+            assignedWorker: "John Smith",
+            resolvedAt: "2024-01-15T10:45:00Z",
+          },
+          {
+            id: "2",
+            type: "Illegal Dumping",
+            location: "Main Road, Sector 15",
+            coordinates: { lat: 40.7589, lng: -73.9851 },
+            status: "in-progress",
+            priority: "critical",
+            reportedAt: "2024-01-15T09:15:00Z",
+            reportedBy: "user456",
+            description: "Large furniture dumped illegally",
+            assignedWorker: "Sarah Johnson",
+          },
+        ];
 
   const weeklyTrends = [
     { day: "Mon", complaints: 12, resolved: 8 },
@@ -158,8 +158,8 @@ export function AnalyticsDashboard({ reports = [], workers = [] }) {
   const resolutionRate =
     mockReports.length > 0
       ? (mockReports.filter((r) => r.status === "resolved").length /
-        mockReports.length) *
-      100
+          mockReports.length) *
+        100
       : 0;
 
   const avgResolutionTime = calculateAverageResolutionTime();
@@ -380,7 +380,7 @@ export function AnalyticsDashboard({ reports = [], workers = [] }) {
                       {worker.completed} tasks completed
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
                     <span className="text-xs font-medium text-yellow-600">
                       ⭐ {worker.rating}
                     </span>
@@ -402,7 +402,7 @@ export function AnalyticsDashboard({ reports = [], workers = [] }) {
               {repeatZones.map((zone) => (
                 <div
                   key={zone.zone}
-                  className="flex items-center justify-between p-3 border border-border rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-lg gap-3"
                 >
                   <div>
                     <h4 className="font-medium text-sm">{zone.zone}</h4>
@@ -410,7 +410,7 @@ export function AnalyticsDashboard({ reports = [], workers = [] }) {
                       {zone.incidents} incidents this month
                     </p>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-between sm:justify-end space-x-2 w-full sm:w-auto">
                     <Badge
                       className={`text-xs ${zone.trend === "increasing"
                           ? "bg-red-100 text-red-700"
@@ -426,6 +426,7 @@ export function AnalyticsDashboard({ reports = [], workers = [] }) {
                     <Button
                       variant="outline"
                       size="sm"
+                      // ✅ **THE FIX:** Removed `flex-shrink-0`
                       className="h-6 text-xs bg-transparent"
                     >
                       Investigate

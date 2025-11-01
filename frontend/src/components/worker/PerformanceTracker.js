@@ -60,14 +60,12 @@ function PerformanceTracker() {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            // --- ERROR FIXED HERE: Used backticks (`) for template literal ---
             'Authorization': `Bearer ${token}`
           }
         });
 
         if (!response.ok) {
           const errorData = await response.json();
-          // Use template literal for error message as well
           throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
 
@@ -83,7 +81,6 @@ function PerformanceTracker() {
 
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
-        // Ensure error is a string
         setError(err.message || String(err));
       } finally {
         setLoading(false);
@@ -156,7 +153,6 @@ function PerformanceTracker() {
         </div>
       </div>
 
-      {/* --- The rest of the component remains unchanged --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Badge Progress */}
         <div className="bg-white p-4 rounded-lg shadow space-y-4">
@@ -164,15 +160,17 @@ function PerformanceTracker() {
             <Award className="h-5 w-5" /> Badge Progress
           </div>
           {badges.map((badge, index) => (
-            <div key={index} className="flex items-center gap-4 p-3 rounded-lg border border-gray-200">
+            <div key={index} className="flex items-start sm:items-center gap-4 p-3 rounded-lg border border-gray-200">
               <div
-                className={`p-2 rounded-full ${badge.earned ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"
+                className={`p-2 rounded-full flex-shrink-0 ${badge.earned ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"
                   }`}
               >
                 <badge.icon className="h-5 w-5" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
+              {/* ✅ FIX: Added min-w-0 to allow content to wrap */}
+              <div className="flex-1 min-w-0">
+                {/* ✅ FIX: Added flex-wrap to allow badge to wrap on mobile */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
                   <span className="font-semibold text-sm text-gray-900">{badge.name}</span>
                   {badge.earned && (
                     <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Earned</span>
@@ -184,7 +182,6 @@ function PerformanceTracker() {
                     <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                       <div
                         className="bg-blue-600 h-2 rounded-full"
-                        // Fix interpolation in style prop to use an actual template literal
                         style={{ width: `${badge.progress}%` }}
                       ></div>
                     </div>
@@ -202,15 +199,17 @@ function PerformanceTracker() {
             <TrendingUp className="h-5 w-5" /> Recent Performance
           </div>
           {recentPerformance.map((day, index) => (
-            <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-gray-200">
+            // ✅ FIX: Stack vertically on mobile, row on larger screens
+            <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border border-gray-200 gap-2 sm:gap-4">
               <div>
                 <div className="font-semibold text-sm text-gray-900">{day.date}</div>
                 <div className="text-xs text-gray-500">
                   {day.tasks} tasks • {day.onTime}/{day.tasks} on time
                 </div>
               </div>
-              <div className="text-right">
-                <div className="flex items-center justify-end gap-1 text-gray-800">
+              {/* ✅ FIX: Align text left on mobile, right on larger screens */}
+              <div className="text-left sm:text-right w-full sm:w-auto">
+                <div className="flex items-center justify-start sm:justify-end gap-1 text-gray-800">
                   <Star className="h-3 w-3 text-yellow-400 fill-current" />
                   <span className="text-sm font-medium">{day.rating}</span>
                 </div>
