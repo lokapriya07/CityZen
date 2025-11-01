@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -144,7 +143,10 @@ const AdminSidebar = ({ activeView, onViewChange, isOpen, toggleSidebar }) => {
               <button
                 onClick={() => {
                   onViewChange(key);
-                  toggleSidebar();
+                  // Close sidebar on mobile after selection
+                  if (isOpen) {
+                    toggleSidebar();
+                  }
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left text-sm font-medium transition-colors ${
                   activeView === key
@@ -226,14 +228,23 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        
+        {/* --- HEADER (MODIFIED) --- */}
         <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <button
-            className="lg:hidden text-gray-700 hover:text-gray-900"
-            onClick={toggleSidebar}
-          >
-            ☰
-          </button>
+          {/* Grouping for left-aligned items */}
+          <div className="flex items-center gap-4">
+            {/* Hamburger button moved to the left */}
+            <button
+              className="lg:hidden text-gray-700 hover:text-gray-900"
+              onClick={toggleSidebar}
+            >
+              ☰
+            </button>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          </div>
+          
+          {/* Right-aligned content (if any) would go here */}
+          {/* Example: <div className="... user icon ...">...</div> */}
         </header>
 
         <main className="flex-1 overflow-auto p-4 sm:p-6">
@@ -287,14 +298,15 @@ export default function AdminDashboard() {
 
                 {/* Unassigned Reports */}
                 <Card className="bg-white border-gray-200">
-                  <CardHeader className="flex justify-between items-center">
+                  <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <CardTitle>New Unassigned Reports</CardTitle>
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setActiveView("tasks")}
-                        className="w-full sm:w-auto text-sm sm:text-base px-3 sm:px-5 py-2 sm:py-2.5 flex items-center justify-center whitespace-nowrap"
-                    >Assign Tasks
+                        // Adjusted button classes for responsiveness
+                        className="w-full sm:w-auto text-sm px-3 py-2"
+                      >Assign Tasks
                     </Button>
 
                   </CardHeader>
@@ -319,7 +331,7 @@ export default function AdminDashboard() {
                             </div>
                             <div className="flex items-center justify-end gap-2 mt-2 sm:mt-0">
                               <Badge variant="Submitted">{formatStatus(report.status)}</Badge>
-                             
+                              
                             </div>
                           </div>
                         ))}
@@ -394,7 +406,7 @@ export default function AdminDashboard() {
                       <CardTitle>Quick Actions</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                     
+                      
                       <Button variant="outline" className="w-full justify-start" onClick={() => setActiveView("tasks")}>
                         📋 Assign Tasks
                       </Button>
