@@ -22,10 +22,11 @@ const fetchApi = async (url, method = "GET", body = null) => {
     Authorization: `Bearer ${token}`,
   };
   const config = { method, headers };
+  const API = process.env.REACT_APP_API_URL;
   if (body) config.body = JSON.stringify(body);
   const finalUrl =
     url.startsWith("/") && !url.startsWith("//")
-      ? `http://localhost:8001${url}`
+      ? `${API}${url}`
       : url;
   const response = await fetch(finalUrl, config);
   if (!response.ok) {

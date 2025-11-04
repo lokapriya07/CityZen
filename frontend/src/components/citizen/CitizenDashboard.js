@@ -9,7 +9,7 @@ import { ReportForm } from "./report-form";
 import Reward from "./rewards";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = "http://localhost:8001/api/reports";
+const API_BASE_URL = "https://cityzen-50ug.onrender.com/api/reports";
 
 const getAuthToken = () => localStorage.getItem("authToken");
 

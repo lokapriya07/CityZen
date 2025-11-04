@@ -33,7 +33,7 @@ export function EmergencyMessaging({ userType, taskId, worker, onClose }) {
             return;
         }
 
-        const newSocket = io('http://localhost:8001', {
+        const newSocket = io('https://cityzen-50ug.onrender.com', {
             query: { token },
             transports: ['websocket', 'polling']
         });

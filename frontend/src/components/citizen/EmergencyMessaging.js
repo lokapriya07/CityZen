@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { X, Send, Clock, Loader2 } from 'lucide-react';
 import { io } from "socket.io-client";
 
-const SOCKET_URL = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8001") : "";
+const SOCKET_URL = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_SOCKET_URL || "https://cityzen-50ug.onrender.com") : "";
 
 const getAuthToken = () => {
     if (typeof window !== "undefined") {

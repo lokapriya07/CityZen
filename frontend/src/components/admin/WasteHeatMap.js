@@ -92,7 +92,7 @@ export default function WasteHeatmap() {
         // Cleanup global error listener
         return () => window.removeEventListener("error", handleGlobalError);
     }, []); // Run only once on component mount
-
+    const API = process.env.REACT_APP_API_URL;
     // --- Effect for Fetching Report Data ---
     useEffect(() => {
         const fetchReports = async () => {
@@ -100,7 +100,7 @@ export default function WasteHeatmap() {
                 setLoading(true);
                 const token = localStorage.getItem("adminToken"); // Make sure this is the correct token key
                 // Use the correct admin endpoint
-                const res = await fetch("http://localhost:8001/api/admin/reports/all", {
+                const res = await fetch(`${API}/api/admin/reports/all`, {
                     headers: {
                         "Content-Type": "application/json",
                         ...(token && { Authorization: `Bearer ${token}` }) // Conditionally add Auth header
