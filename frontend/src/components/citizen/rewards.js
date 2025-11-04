@@ -6,14 +6,14 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 
 import { AlertCircle, Gift, Zap, Leaf, Ticket } from "lucide-react"
-
+const API = process.env.REACT_APP_API_URL;
 // =========================================================================
 // API UTILITY TO FETCH USER'S REAL POINTS
 // =========================================================================
 const fetchApi = async (url) => {
   const finalUrl =
     url.startsWith("/") && !url.startsWith("//")
-      ? `http://localhost:8001${url}` // Assumes same backend port
+      ? `${API}${url}` // Assumes same backend port
       : url;
   // IMPORTANT: Assumes user token is stored as 'token'
   // If you store it as 'userToken', change 'token' below

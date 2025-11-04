@@ -8,12 +8,12 @@ import { Badge } from "../citizen/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../citizen/ui/avatar";
 import { Progress } from "../citizen/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../citizen/ui/tabs";
-
+const API = process.env.REACT_APP_API_URL;
 // --- API Utility (To fetch data) ---
 const fetchApi = async (url) => {
   const finalUrl =
     url.startsWith("/") && !url.startsWith("//")
-      ? `http://localhost:8001${url}`
+      ? `${API}${url}`
       : url;
   const token = localStorage.getItem("adminToken");
   const headers = { "Content-Type": "application/json" };
@@ -33,7 +33,7 @@ const fetchApi = async (url) => {
 const postApi = async (url, body) => {
   const finalUrl =
     url.startsWith("/") && !url.startsWith("//")
-      ? `http://localhost:8001${url}`
+      ? `${API}${url}`
       : url;
   const token = localStorage.getItem("adminToken");
   const headers = { "Content-Type": "application/json" };
@@ -392,6 +392,7 @@ export function CommunityEngagement() {
             onClick={() => setShowRewardModal(true)}
             className="w-full sm:w-auto"
           >
+
             Send Reward
           </Button>
         </div>

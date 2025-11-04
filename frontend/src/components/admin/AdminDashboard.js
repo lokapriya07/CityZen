@@ -66,12 +66,13 @@ const Badge = ({ children, variant, className }) => {
     </span>
   );
 };
-
+const API = process.env.REACT_APP_API_URL;
+console.log("API LOADED:", API);
 // --- API Utility ---
 const fetchApi = async (url, method = "GET", body = null) => {
   let finalUrl =
     url.startsWith("/") && !url.startsWith("//")
-      ? `http://localhost:8001${url}`
+      ? `${API}${url}`
       : url;
   const token = localStorage.getItem("adminToken");
 

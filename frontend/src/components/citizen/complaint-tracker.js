@@ -351,7 +351,7 @@ export function ComplaintTracker({ complaint }) {
     try {
       setLocationError(null);
       setLoadingLocation(true);
-      const url = `http://localhost:8001/api/workers/${encodeURIComponent(workerName)}/location`;
+      const url = `https://cityzen-50ug.onrender.com/api/workers/${encodeURIComponent(workerName)}/location`;
       const res = await fetch(url, {
         method: 'GET',
         headers: {

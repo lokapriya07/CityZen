@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "../citizen/ui/card";
 import { Badge } from "../citizen/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../citizen/ui/avatar";
 import { Progress } from "../citizen/ui/progress";
-
+const API = process.env.REACT_APP_API_URL;
 // --- API Utility ---
 const fetchApi = async (url) => {
   const finalUrl =
     url.startsWith("/") && !url.startsWith("//")
-      ? `http://localhost:8001${url}`
+      ? `${API}/${url}`
       : url;
   const token = localStorage.getItem("adminToken");
   const headers = { "Content-Type": "application/json" };

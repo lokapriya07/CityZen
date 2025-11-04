@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Loader2, Clock } from "lucide-react";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8001") : "";
+const SOCKET_URL = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_SOCKET_URL || "https://cityzen-50ug.onrender.com") : "";
 const getAuthToken = () => localStorage.getItem("authToken");
 
 export default function WorkerEmergencyMessaging({ task, worker, onClose, messageHistory = [], onNewMessage }) {

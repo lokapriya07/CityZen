@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 
 // --- UI Components ---
-
+const API = process.env.REACT_APP_API_URL;
 const Button = ({ onClick, disabled, children, variant = "primary" }) => {
     const primaryStyles = "bg-green-600 hover:bg-green-700 text-white";
     const secondaryStyles = "bg-white text-gray-800 border border-gray-300 hover:bg-gray-100";
@@ -353,7 +353,7 @@ export default function TaskAssignmentHub() {
         const token = getToken();
         if (!token) { setReportsLoading(false); return; }
         try {
-            const res = await fetch("http://localhost:8001/api/admin/reports/unassigned/distances", {
+            const res = await fetch(`${API}/api/admin/reports/unassigned/distances`, {
                 method: "GET",
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -371,7 +371,7 @@ export default function TaskAssignmentHub() {
         const token = getToken();
         if (!token) { setWorkersLoading(false); return; }
         try {
-            const res = await fetch("http://localhost:8001/api/admin/workers", {
+            const res = await fetch(`${API}/api/admin/workers`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -388,7 +388,7 @@ export default function TaskAssignmentHub() {
         const token = getToken();
         if (!token) { setAllReportsLoading(false); return; }
         try {
-            const res = await fetch("http://localhost:8001/api/admin/reports/all", {
+            const res = await fetch(`${API}/api/admin/reports/all`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -403,7 +403,7 @@ export default function TaskAssignmentHub() {
         if (!token) { setReportsLoading(false); return; }
 
         try {
-            const res = await fetch("http://localhost:8001/api/admin/auto-assign", {
+            const res = await fetch(`${API}/api/admin/auto-assign`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -432,7 +432,7 @@ export default function TaskAssignmentHub() {
 
         const token = getToken();
         try {
-            const res = await fetch(`http://localhost:8001/api/admin/reports/${reportId}/assign`, {
+            const res = await fetch(`${API}/api/admin/reports/${reportId}/assign`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ workerId })
