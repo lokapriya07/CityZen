@@ -25,10 +25,14 @@ app.use(cors({
   origin: [
     "http://localhost:3000",
     "http://localhost:3001",
-    process.env.CLIENT_URL // ✅ add this for deployed frontend
+    "https://city-zen-olive.vercel.app", // ✅ your current deployed frontend
+    "https://city-zen-loksss-projects.vercel.app" // (optional old one)
   ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
