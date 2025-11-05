@@ -533,7 +533,7 @@ export function ReportForm({ onSubmit, isSubmitting }) {
 
         try {
             const token = localStorage.getItem("token"); // JWT token from login
-            const response = await fetch("https://cityzen-50ug.onrender.com/upload-image", {
+            const response = await fetch("https://cityzen-1.onrender.com/upload-image", {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
