@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -7,11 +6,11 @@ import { Badge } from "../citizen/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../citizen/ui/avatar";
 import { Progress } from "../citizen/ui/progress";
 const API = process.env.REACT_APP_API_URL;
-// --- API Utility ---
+// --- API Utility (To fetch data) ---
 const fetchApi = async (url) => {
   const finalUrl =
     url.startsWith("/") && !url.startsWith("//")
-      ? `${API}/${url}`
+      ? `${API}${url}`
       : url;
   const token = localStorage.getItem("adminToken");
   const headers = { "Content-Type": "application/json" };
