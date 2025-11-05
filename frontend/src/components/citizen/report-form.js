@@ -530,10 +530,10 @@ export function ReportForm({ onSubmit, isSubmitting }) {
         setFileLabel(`Validating ${fileToValidate.name}...`);
         setImagePreview('');
         setIsImageValid(false); 
-
+        const API_URL = "https://cityzen-1.onrender.com";
         try {
             const token = localStorage.getItem("token"); // JWT token from login
-            const response = await fetch("https://cityzen-1.onrender.com/upload-image", {
+            const response = await fetch(`${API_URL}/upload-image`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
