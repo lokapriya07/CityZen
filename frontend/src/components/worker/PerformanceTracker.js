@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Award, TrendingUp, Clock, Star, Target, Zap, Loader2 } from "lucide-react";
 
@@ -60,16 +61,39 @@ function PerformanceTracker() {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${ token } `
           }
         });
 
+        // --- START OF FIX: Handle non-JSON responses ---
+        // Get the raw text from the response first.
+        const responseBody = await response.text();
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+          let errorMessage = responseBody; // Default to the raw text (e.g., "Proxy erro...")
+
+          // Try to parse it as JSON in case the backend *did* send a JSON error
+          try {
+            const errorJson = JSON.parse(responseBody);
+            if (errorJson.message) {
+              errorMessage = errorJson.message;
+            }
+          } catch (e) {
+            // It wasn't JSON, so we'll just use the raw text. This is fine.
+          }
+          
+          // Truncate the error if it's a giant HTML page
+          if (errorMessage.length > 200) {
+            errorMessage = `${ errorMessage.substring(0, 200) }...`;
+          }
+
+          throw new Error(errorMessage || `HTTP error! status: ${ response.status } `);
         }
 
-        const result = await response.json();
+        // If we get here, the response was OK (200) and we have the text.
+        // Now we can safely parse it.
+        const result = JSON.parse(responseBody);
+        // --- END OF FIX ---
 
         if (result.success && result.data) {
           // Set state from the backend data
@@ -81,6 +105,7 @@ function PerformanceTracker() {
 
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
+        // This will now show your clean error message
         setError(err.message || String(err));
       } finally {
         setLoading(false);
@@ -162,8 +187,9 @@ function PerformanceTracker() {
           {badges.map((badge, index) => (
             <div key={index} className="flex items-start sm:items-center gap-4 p-3 rounded-lg border border-gray-200">
               <div
-                className={`p-2 rounded-full flex-shrink-0 ${badge.earned ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"
-                  }`}
+                className={`p - 2 rounded - full flex - shrink - 0 ${
+  badge.earned ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"
+} `}
               >
                 <badge.icon className="h-5 w-5" />
               </div>
@@ -182,7 +208,7 @@ function PerformanceTracker() {
                     <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                       <div
                         className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${badge.progress}%` }}
+                        style={{ width: `${ badge.progress }% ` }}
                       ></div>
                     </div>
                     <div className="text-xs text-gray-500 text-right">{badge.progress}% complete</div>
