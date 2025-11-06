@@ -323,7 +323,7 @@ export default function SignupForm() {
     }
 
     try {
-      const response = await fetch('http://localhost:8001/api/auth/signup', {
+      const response = await fetch('https://cityzen-50ug.onrender.com/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -360,7 +360,7 @@ export default function SignupForm() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8001/api/auth/verify-otp', {
+      const response = await fetch('https://cityzen-50ug.onrender.com/api/auth/verify-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
