@@ -24,6 +24,16 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  otp: {
+    type: Number // Or String, Number matches our logic
+  },
+  otpExpires: {
+    type: Date
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
 
   points: {
     type: Number,
