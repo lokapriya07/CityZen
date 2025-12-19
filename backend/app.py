@@ -49,15 +49,15 @@ def check_exif_data(image_bytes: bytes):
         if not any(key in exif_tags for key in critical_keys):
             return {"valid": False, "reason": "Missing essential camera metadata (Make/Model/Date)."}
 
-        # Check if photo was taken recently (within 7 days)
+        # Check if photo was taken recently (within 1 day)
         if "DateTimeOriginal" in exif_tags:
             try:
                 photo_datetime_str = exif_tags.get("DateTimeOriginal", exif_tags.get("DateTime"))
                 date_part, time_part = photo_datetime_str.split(" ")
                 photo_datetime = datetime.strptime(f"{date_part.replace(':', '-')} {time_part}", "%Y-%m-%d %H:%M:%S")
 
-                if datetime.now() - photo_datetime > timedelta(days=7):
-                    return {"valid": False, "reason": f"Photo too old ({photo_datetime.date()}). Please upload a photo taken within the last 7 days."}
+                if datetime.now() - photo_datetime > timedelta(days=1):
+                    return {"valid": False, "reason": f"Photo too old ({photo_datetime.date()}). Please upload a photo taken now."}
 
             except Exception as e:
                 print(f"Warning parsing EXIF date: {e}")
