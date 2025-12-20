@@ -89,7 +89,7 @@ async def upload_image(file: UploadFile = File(...)):
 
     # STEP 2 — Classify with Gemini
     model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",  # Compatible stable version
+        model_name="gemini-1.5-flash",  # Compatible stable version
         system_instruction=(
             "You are an AI waste classification expert. Analyze the image to determine if it clearly displays "
             "mismanaged garbage, random litter, or general household trash/waste that should be reported. "
