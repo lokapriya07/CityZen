@@ -743,4 +743,4 @@ const initializeSocket = (io) => {
     return io;
 };
 
-module.exports = { initializeSocket };s
+module.exports = { initializeSocket };

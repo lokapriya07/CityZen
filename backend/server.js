@@ -2,11 +2,13 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const http = require("http");
+const { Server } = require("socket.io");
+const { initializeSocket } = require("./sockets/socketHandler");
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
 
 const app = express();
-const PORT = process.env.PORT || 8001;
+const PORT = 8001;
 
 // Basic env check
 if (!process.env.JWT_SECRET) {
@@ -18,26 +20,16 @@ console.log("🚀 Starting server initialization...");
 
 // Middleware
 console.log("🔧 Setting up middleware...");
-
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://city-zen-olive.vercel.app", // ✅ your current deployed frontend
-    "https://city-zen-loksss-projects.vercel.app" // (optional old one)
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin: ["http://localhost:3000", "http://localhost:3001"],
   credentials: true
 }));
-
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // MongoDB
 console.log("📦 Connecting to MongoDB...");
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/cityzenApp";
 mongoose
   .connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB connected successfully"))
@@ -74,22 +66,22 @@ const io = new Server(server, {
   },
 });
 
-// // Add Socket.IO connection logging
-// io.on("connection", (socket) => {
-//   console.log(`🔗 New client connected: ${socket.id}`);
+// Add Socket.IO connection logging
+io.on("connection", (socket) => {
+  console.log(`🔗 New client connected: ${socket.id}`);
 
-//   socket.on("disconnect", (reason) => {
-//     console.log(`🔌 Client disconnected: ${socket.id}, Reason: ${reason}`);
-//   });
+  socket.on("disconnect", (reason) => {
+    console.log(`🔌 Client disconnected: ${socket.id}, Reason: ${reason}`);
+  });
 
-//   socket.on("error", (error) => {
-//     console.error(`❌ Socket error for ${socket.id}:`, error);
-//   });
-// });
+  socket.on("error", (error) => {
+    console.error(`❌ Socket error for ${socket.id}:`, error);
+  });
+});
 
-// // Initialize sockets
-// console.log("🔧 Initializing socket handlers...");
-// initializeSocket(io);
+// Initialize sockets
+console.log("🔧 Initializing socket handlers...");
+initializeSocket(io);
 
 // Add request logging middleware
 app.use((req, res, next) => {
