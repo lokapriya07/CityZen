@@ -176,9 +176,10 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 import os
 from dotenv import load_dotenv
-from PIL import Image, ExifTags, ImageOps
+from PIL import Image, ExifTags
 from io import BytesIO
 from datetime import datetime, timedelta
 import json
@@ -188,7 +189,7 @@ load_dotenv()
 # --- CONFIGURATION ---
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
-    raise ValueError("❌ GEMINI_API_KEY is missing from environment variables.")
+    raise ValueError("❌ GEMINI_API_KEY is missing.")
 
 genai.configure(api_key=api_key)
 
@@ -204,99 +205,124 @@ app.add_middleware(
 
 # --- UTILS ---
 def is_genuine_camera_photo(image_bytes: bytes):
-    """Verifies that the image is a fresh camera photo using EXIF metadata."""
     try:
         img = Image.open(BytesIO(image_bytes))
-        
-        # Merge basic EXIF with the Sub-IFD block (where smartphones hide data)
         exif = img.getexif()
         exif_dict = {ExifTags.TAGS.get(k, k): v for k, v in exif.items()}
+        
+        # Access Sub-IFD for smartphone-specific metadata
         try:
             for key in exif.get_ifd(0x8769):
                 tag_name = ExifTags.TAGS.get(key, key)
                 exif_dict[tag_name] = exif.get_ifd(0x8769)[key]
         except: pass
 
-        # 1. Reject if no hardware info (indicates downloaded/screenshot)
         if not (exif_dict.get("Make") or exif_dict.get("Model")):
-            return False, "❌ Image Rejected: This is a downloaded or modified image. Please upload a direct camera photo."
+            return False, "❌ Image Rejected: Metadata missing (Screenshot/Download)."
 
-        # 2. Reject if no original timestamp
         date_str = exif_dict.get("DateTimeOriginal") or exif_dict.get("DateTime")
         if not date_str:
-            return False, "❌ Image Rejected: Original capture time not found. Only direct camera photos are allowed."
+            return False, "❌ Image Rejected: No capture timestamp found."
 
-        # 3. Reject if not recent (Photo must be taken within last 24 hours)
         date_str = str(date_str).replace("-", ":")
-        taken_time = datetime.strptime(date_str, "%Y:%m:%d %H:%M:%S")
+        taken_time = datetime.strptime(date_str[:19], "%Y:%m:%d %H:%M:%S")
+        
         if datetime.now() - taken_time > timedelta(days=1):
-            return False, "❌ Image Rejected: Photo is too old. Please take a new photo of the waste right now."
+            return False, "❌ Image Rejected: Photo must be taken within 24 hours."
 
         return True, "Verified"
     except Exception as e:
-        return False, f"❌ Image Validation Failed: {str(e)}"
+        return False, f"❌ Validation Error: {str(e)}"
 
-# --- MAIN ROUTE ---@app.post("/upload-image")
+# --- MAIN ROUTE ---
+@app.post("/upload-image")
 async def upload_image(file: UploadFile = File(...)):
     image_bytes = await file.read()
 
-    # STEP 1: Strict Metadata Check
+    # 1. Metadata Validation
     is_valid, error_msg = is_genuine_camera_photo(image_bytes)
     if not is_valid:
-        return JSONResponse(content={"status": "rejected", "message": error_msg})
+        return JSONResponse(status_code=400, content={"status": "rejected", "message": error_msg})
 
-    # STEP 2: Gemini Classification
+    # 2. Configure Model with Safety Override
+    # This prevents the "Internal Error" caused by safety blocks on garbage images
     model = genai.GenerativeModel(
         model_name="gemini-1.5-flash",
-        generation_config={"response_mime_type": "application/json"},
-        # Safety settings remain the same
+        generation_config={
+            "response_mime_type": "application/json",
+            "temperature": 0.1, # Lower temperature for consistent JSON
+        },
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        }
     )
 
     prompt = (
-        "Analyze this camera photo for mismanaged waste. Respond ONLY in JSON format: "
-        "{ \"is_garbage\": boolean, \"explanation\": \"short reason\" }. "
-        "Strict Rule: If the image is clear but does NOT contain reportable garbage, set is_garbage to false."
+        "Identify if this image shows mismanaged waste or garbage in a public area. "
+        "Respond ONLY with a JSON object: "
+        "{\"is_garbage\": boolean, \"explanation\": \"string\"}"
     )
 
     try:
+        # Use a fixed mime_type if the file upload is ambiguous
+        mime_type = file.content_type if file.content_type else "image/jpeg"
+        
         response = model.generate_content([
-            {"mime_type": file.content_type, "data": image_bytes},
+            {"mime_type": mime_type, "data": image_bytes},
             prompt
         ])
 
-        # 1. Check if response actually has content (handles blocks)
+        # 3. Handle Empty/Blocked Responses
         if not response.candidates or not response.candidates[0].content.parts:
             return JSONResponse(status_code=400, content={
                 "status": "rejected", 
-                "message": "❌ AI could not analyze this image. It might be too blurry or violate safety policies."
+                "message": "❌ AI Analysis blocked. Ensure the photo is clear and contains no sensitive content."
             })
 
-        # 2. Clean the response text (remove markdown backticks if any)
-        raw_text = response.text.strip()
-        if raw_text.startswith("```"):
-            raw_text = raw_text.strip("`").replace("json", "", 1).strip()
-
-        result = json.loads(raw_text)
+        # 4. Parse JSON safely
+        result_text = response.text.strip()
+        # Remove potential markdown formatting if the model adds it anyway
+        if result_text.startswith("```"):
+            result_text = result_text.split("```")[1].replace("json", "").strip()
+            
+        result = json.loads(result_text)
         is_garbage = result.get("is_garbage", False)
-        explanation = result.get("explanation", "Not recognized as waste.")
+        explanation = result.get("explanation", "No explanation provided.")
+
+        if is_garbage:
+            return {"status": "accepted", "message": f"✅ Waste detected: {explanation}"}
+        else:
+            return JSONResponse(content={"status": "rejected", "message": f"❌ Not waste: {explanation}"})
 
     except json.JSONDecodeError:
-        return JSONResponse(status_code=500, content={"status": "rejected", "message": "❌ AI returned invalid JSON format."})
+        return JSONResponse(status_code=500, content={"status": "rejected", "message": "❌ AI response format error."})
     except Exception as e:
-        return JSONResponse(status_code=500, content={"status": "rejected", "message": f"❌ API Error: {str(e)}"})
-
-    # STEP 3: Final Decision
-    if is_garbage:
-        return {"status": "accepted", "message": f"✅ Valid waste detected: {explanation}"}
-    else:
-        return JSONResponse(content={
-            "status": "rejected", 
-            "message": f"❌ Image Rejected: {explanation}"
-        })
+        # This catches API Quota issues or Connection issues
+        return JSONResponse(status_code=500, content={"status": "rejected", "message": f"❌ AI Classification Error: {str(e)}"})
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
