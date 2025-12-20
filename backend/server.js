@@ -8,7 +8,7 @@ require("dotenv").config();
 const cookieParser = require("cookie-parser");
 
 const app = express();
-const PORT = 8001;
+const PORT = process.env.PORT || 8001;
 
 // Basic env check
 if (!process.env.JWT_SECRET) {
@@ -20,16 +20,26 @@ console.log("🚀 Starting server initialization...");
 
 // Middleware
 console.log("🔧 Setting up middleware...");
+
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001"],
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://city-zen-olive.vercel.app", // ✅ your current deployed frontend
+    "https://city-zen-loksss-projects.vercel.app" // (optional old one)
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // MongoDB
 console.log("📦 Connecting to MongoDB...");
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/cityzenApp";
+const MONGO_URI = process.env.MONGO_URI;
 mongoose
   .connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB connected successfully"))
