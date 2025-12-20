@@ -2,8 +2,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const http = require("http");
-const { Server } = require("socket.io");
-const { initializeSocket } = require("./sockets/socketHandler");
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
 
@@ -76,22 +74,22 @@ const io = new Server(server, {
   },
 });
 
-// Add Socket.IO connection logging
-io.on("connection", (socket) => {
-  console.log(`🔗 New client connected: ${socket.id}`);
+// // Add Socket.IO connection logging
+// io.on("connection", (socket) => {
+//   console.log(`🔗 New client connected: ${socket.id}`);
 
-  socket.on("disconnect", (reason) => {
-    console.log(`🔌 Client disconnected: ${socket.id}, Reason: ${reason}`);
-  });
+//   socket.on("disconnect", (reason) => {
+//     console.log(`🔌 Client disconnected: ${socket.id}, Reason: ${reason}`);
+//   });
 
-  socket.on("error", (error) => {
-    console.error(`❌ Socket error for ${socket.id}:`, error);
-  });
-});
+//   socket.on("error", (error) => {
+//     console.error(`❌ Socket error for ${socket.id}:`, error);
+//   });
+// });
 
-// Initialize sockets
-console.log("🔧 Initializing socket handlers...");
-initializeSocket(io);
+// // Initialize sockets
+// console.log("🔧 Initializing socket handlers...");
+// initializeSocket(io);
 
 // Add request logging middleware
 app.use((req, res, next) => {
