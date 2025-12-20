@@ -236,8 +236,7 @@ def is_genuine_camera_photo(image_bytes: bytes):
     except Exception as e:
         return False, f"❌ Image Validation Failed: {str(e)}"
 
-# --- MAIN ROUTE ---
-@app.post("/upload-image")
+# --- MAIN ROUTE ---@app.post("/upload-image")
 async def upload_image(file: UploadFile = File(...)):
     image_bytes = await file.read()
 
@@ -247,23 +246,16 @@ async def upload_image(file: UploadFile = File(...)):
         return JSONResponse(content={"status": "rejected", "message": error_msg})
 
     # STEP 2: Gemini Classification
-    # Safety settings: OFF/BLOCK_NONE to prevent crashing when AI sees "disturbing" trash
     model = genai.GenerativeModel(
         model_name="gemini-1.5-flash",
         generation_config={"response_mime_type": "application/json"},
-        safety_settings=[
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-        ]
+        # Safety settings remain the same
     )
 
     prompt = (
         "Analyze this camera photo for mismanaged waste. Respond ONLY in JSON format: "
         "{ \"is_garbage\": boolean, \"explanation\": \"short reason\" }. "
-        "Strict Rule: If the image is clear but does NOT contain reportable garbage (e.g., a selfie, "
-        "a clean room, or just nature), set is_garbage to false."
+        "Strict Rule: If the image is clear but does NOT contain reportable garbage, set is_garbage to false."
     )
 
     try:
@@ -272,24 +264,34 @@ async def upload_image(file: UploadFile = File(...)):
             prompt
         ])
 
-        # Prevent Internal Error if AI response is empty or blocked
+        # 1. Check if response actually has content (handles blocks)
         if not response.candidates or not response.candidates[0].content.parts:
-            return JSONResponse(status_code=422, content={"status": "rejected", "message": "❌ AI Error: Could not process this image. Please try a different angle."})
+            return JSONResponse(status_code=400, content={
+                "status": "rejected", 
+                "message": "❌ AI could not analyze this image. It might be too blurry or violate safety policies."
+            })
 
-        result = json.loads(response.text)
+        # 2. Clean the response text (remove markdown backticks if any)
+        raw_text = response.text.strip()
+        if raw_text.startswith("```"):
+            raw_text = raw_text.strip("`").replace("json", "", 1).strip()
+
+        result = json.loads(raw_text)
         is_garbage = result.get("is_garbage", False)
         explanation = result.get("explanation", "Not recognized as waste.")
 
+    except json.JSONDecodeError:
+        return JSONResponse(status_code=500, content={"status": "rejected", "message": "❌ AI returned invalid JSON format."})
     except Exception as e:
-        return JSONResponse(status_code=500, content={"status": "rejected", "message": f"❌ Internal Error: {str(e)}"})
+        return JSONResponse(status_code=500, content={"status": "rejected", "message": f"❌ API Error: {str(e)}"})
 
-    # STEP 3: Final Decision based on Content
+    # STEP 3: Final Decision
     if is_garbage:
         return {"status": "accepted", "message": f"✅ Valid waste detected: {explanation}"}
     else:
         return JSONResponse(content={
             "status": "rejected", 
-            "message": f"❌ Image Rejected: This does not appear to be reportable waste. Explanation: {explanation}"
+            "message": f"❌ Image Rejected: {explanation}"
         })
 
 if __name__ == "__main__":
